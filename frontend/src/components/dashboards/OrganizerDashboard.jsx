@@ -1,29 +1,32 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useEventHub } from '../../context/EventHubContext';
+import { AnimatePresence, motion } from 'framer-motion';
+import {
+  AreaChart,
+  Area,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  PieChart,
+  Pie,
+  Cell
+} from 'recharts';
 import {
   Layers,
   PlusCircle,
   Users,
   CheckCircle2,
-  Calendar,
-  Clock,
-  MapPin,
   TrendingUp,
   Download,
   Search,
   Eye,
-  Edit,
   Trash2,
-  XCircle,
   AlertCircle,
-  Sparkles,
   ArrowRight,
-  ArrowLeft,
-  DollarSign,
-  QrCode,
   Building,
-  Check,
-  Globe2
+  Activity
 } from 'lucide-react';
 
 export const OrganizerDashboard = ({ onSelectEvent }) => {
@@ -43,8 +46,7 @@ export const OrganizerDashboard = ({ onSelectEvent }) => {
   const [rosterSearch, setRosterSearch] = useState('');
   const [cancelModalEventId, setCancelModalEventId] = useState(null);
 
-  // Wizard state for Create Event
-  const [wizardStep, setWizardStep] = useState(1);
+  // Form state for Create Event
   const [newEventData, setNewEventData] = useState({
     title: '',
     category: 'hackathon',
@@ -52,11 +54,11 @@ export const OrganizerDashboard = ({ onSelectEvent }) => {
     tagline: '',
     description: '',
     mode: 'Hybrid',
-    location: '',
+    location: 'IIT Delhi Campus & Virtual Live Stream',
     bannerUrl: 'https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=1000&auto=format&fit=crop&q=80',
-    startDate: '',
-    endDate: '',
-    registrationDeadline: '',
+    startDate: '2026-10-15',
+    endDate: '2026-10-17',
+    registrationDeadline: '2026-10-12T23:59:59',
     maxCapacity: 300,
     allowWaitlist: true,
     isFree: true,
@@ -67,27 +69,35 @@ export const OrganizerDashboard = ({ onSelectEvent }) => {
       {
         day: 'Day 1',
         sessions: [
-          { time: '10:00 AM - 11:30 AM', title: 'Keynote & Kickoff', speaker: 'Lead Architect', room: 'Main Hall' },
-          { time: '02:00 PM - 04:00 PM', title: 'Hands-on Technical Session', speaker: 'Industry Specialist', room: 'Lab 1' }
+          { time: '10:00 AM - 11:30 AM', title: 'Keynote & Problem Statement Release', speaker: 'Lead Architect', room: 'Main Conclave' },
+          { time: '02:00 PM - 05:00 PM', title: 'Mentorship Rounds & Code Review', speaker: 'Industry Specialist', room: 'Lab 1' }
         ]
       }
     ],
     prizes: [
-      { rank: '1st Prize', prize: '₹1,00,000 Cash + Certificates' }
+      { rank: '1st Prize (Grand Winner)', prize: '₹1,50,000 Cash + Grants' },
+      { rank: 'Runner Up', prize: '₹75,000 Cash + Cloud Credits' }
     ],
-    perks: ['Official Certificate', 'Networking with Mentors', 'Goodies & Swag Kit']
+    perks: ['Official Verified Certificate', 'Direct Internship Interviews', 'Exclusive Swag Kits']
   });
 
   if (!currentUser) {
     return (
-      <div className="dashboard-container empty-state-container">
-        <h2>Organizer Studio</h2>
-        <p>Please log in as an Event Host or Organizer to manage your events.</p>
+      <div className="max-w-4xl mx-auto px-4 py-16 text-center space-y-4">
+        <div className="w-16 h-16 rounded-2xl bg-indigo-50 dark:bg-indigo-950/80 text-indigo-600 dark:text-indigo-400 flex items-center justify-center mx-auto">
+          <Building size={32} />
+        </div>
+        <h2 className="text-2xl font-bold text-slate-900 dark:text-white">
+          Organizer Studio
+        </h2>
+        <p className="text-sm text-slate-500 max-w-md mx-auto">
+          Please log in as an Event Host or Organizer to manage your events and attendee rosters.
+        </p>
       </div>
     );
   }
 
-  // Events belonging to or managed by host
+  // Host events
   const hostEvents = events.filter(
     e => e.organizer?.email === currentUser.email || currentUser.role === 'host' || currentUser.role === 'admin'
   );
@@ -97,19 +107,36 @@ export const OrganizerDashboard = ({ onSelectEvent }) => {
     return e.status === eventFilterStatus;
   });
 
-  // Calculate Host Metrics
+  // Host Metrics
   const totalHostRegistrations = registrations.filter(
     r => hostEvents.some(e => e.id === r.eventId) && r.status !== 'cancelled'
   );
   const totalCheckedIn = totalHostRegistrations.filter(r => r.checkedIn).length;
-  const totalRevenue = totalHostRegistrations.reduce((acc, r) => acc + (r.amountPaid || 0), 0);
   const avgFillRate = hostEvents.length > 0
     ? Math.round(
         (hostEvents.reduce((acc, e) => acc + (e.registeredCount / e.maxCapacity), 0) / hostEvents.length) * 100
       )
     : 0;
 
-  // Participant roster filtering
+  // Chart Mock Data
+  const registrationTrendData = [
+    { name: 'Mon', registrations: 24, checkins: 10 },
+    { name: 'Tue', registrations: 48, checkins: 22 },
+    { name: 'Wed', registrations: 72, checkins: 45 },
+    { name: 'Thu', registrations: 110, checkins: 80 },
+    { name: 'Fri', registrations: 165, checkins: 130 },
+    { name: 'Sat', registrations: 220, checkins: 195 },
+    { name: 'Sun', registrations: 280, checkins: 240 }
+  ];
+
+  const categoryDistributionData = [
+    { name: 'Hackathons', value: 45, color: '#6366F1' },
+    { name: 'Workshops', value: 25, color: '#A855F7' },
+    { name: 'Summits', value: 18, color: '#EC4899' },
+    { name: 'Cultural', value: 12, color: '#F59E0B' }
+  ];
+
+  // Roster Filter
   const rosterParticipants = registrations.filter(r => {
     const matchesEvent = selectedEventForRoster === 'all' || r.eventId === selectedEventForRoster;
     const matchesSearch = rosterSearch === '' ||
@@ -142,7 +169,6 @@ export const OrganizerDashboard = ({ onSelectEvent }) => {
     e.preventDefault();
     createEvent(newEventData);
     setActiveSubTab('manage-events');
-    setWizardStep(1);
   };
 
   const handleConfirmCancelEvent = (eventId) => {
@@ -151,858 +177,620 @@ export const OrganizerDashboard = ({ onSelectEvent }) => {
   };
 
   return (
-    <div className="dashboard-container organizer-dashboard">
-      {/* Top Organizer Banner */}
-      <div className="dashboard-profile-header host-header">
-        <div className="profile-header-left">
-          <div className="host-logo-box">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+      {/* Top Banner Card */}
+      <div className="p-6 sm:p-8 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+        <div className="flex items-center gap-5">
+          <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-gradient-to-br from-indigo-600 to-purple-600 text-white flex items-center justify-center shadow-lg shadow-indigo-500/20">
             <Building size={32} />
           </div>
-          <div className="profile-header-text">
-            <div className="profile-name-row">
-              <h2>{currentUser.organizationName || currentUser.name}</h2>
-              <span className="role-badge host">
-                <CheckCircle2 size={14} />
+          <div className="space-y-1">
+            <div className="flex items-center gap-2.5 flex-wrap">
+              <h1 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white">
+                {currentUser.organizationName || currentUser.institutionName || currentUser.name}
+              </h1>
+              <span className="px-2.5 py-0.5 text-xs font-bold rounded-md bg-purple-50 dark:bg-purple-950/80 text-purple-600 dark:text-purple-400 border border-purple-200 dark:border-purple-800 flex items-center gap-1">
+                <CheckCircle2 size={13} />
                 <span>Verified Event Host</span>
               </span>
             </div>
-            <p className="profile-affiliation-sub">
-              🏛️ {currentUser.orgType || 'University / Community'} • Host Lead: {currentUser.name}
+            <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400">
+              Organizer Studio • Real-Time Ticket Desk, Capacity Engine & Analytics
             </p>
-            <div className="profile-contact-chips">
-              <span>📧 {currentUser.email}</span>
-              <span>🌐 {currentUser.website || 'https://eventhub.com'}</span>
-            </div>
           </div>
         </div>
 
-        <div className="profile-header-right">
-          <button
-            className="btn-create-event-top"
-            onClick={() => {
-              setActiveSubTab('create-event');
-              setWizardStep(1);
-            }}
-          >
-            <PlusCircle size={16} />
-            <span>Create New Event</span>
-          </button>
-        </div>
+        <button
+          onClick={() => setActiveSubTab('create-event')}
+          className="btn-primary flex-shrink-0"
+        >
+          <PlusCircle size={16} />
+          <span>Publish New Event</span>
+        </button>
       </div>
 
-      {/* KPI Stats Strip */}
-      <div className="dashboard-kpi-grid">
-        <div className="kpi-card" onClick={() => setActiveSubTab('manage-events')}>
-          <div className="kpi-icon blue">
-            <Layers size={22} />
+      {/* KPI Stats Cards */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm">
+          <div className="flex items-center justify-between text-indigo-600 dark:text-indigo-400 mb-2">
+            <span className="text-xs font-bold uppercase tracking-wider text-slate-400">Events Hosted</span>
+            <Layers size={18} />
           </div>
-          <div className="kpi-content">
-            <span className="kpi-number">{hostEvents.length}</span>
-            <span className="kpi-title">Events Hosted</span>
-          </div>
+          <span className="text-2xl font-black text-slate-900 dark:text-white">
+            {hostEvents.length}
+          </span>
+          <p className="text-xs text-slate-500 mt-0.5">Published & Active</p>
         </div>
 
-        <div className="kpi-card" onClick={() => setActiveSubTab('participants')}>
-          <div className="kpi-icon green">
-            <Users size={22} />
+        <div className="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm">
+          <div className="flex items-center justify-between text-purple-600 dark:text-purple-400 mb-2">
+            <span className="text-xs font-bold uppercase tracking-wider text-slate-400">Registrations</span>
+            <Users size={18} />
           </div>
-          <div className="kpi-content">
-            <span className="kpi-number">{totalHostRegistrations.length}</span>
-            <span className="kpi-title">Total Registrations</span>
-          </div>
+          <span className="text-2xl font-black text-slate-900 dark:text-white">
+            {totalHostRegistrations.length}
+          </span>
+          <p className="text-xs text-slate-500 mt-0.5">Active passes</p>
         </div>
 
-        <div className="kpi-card" onClick={() => setActiveSubTab('analytics')}>
-          <div className="kpi-icon amber">
-            <TrendingUp size={22} />
+        <div className="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm">
+          <div className="flex items-center justify-between text-emerald-600 dark:text-emerald-400 mb-2">
+            <span className="text-xs font-bold uppercase tracking-wider text-slate-400">Desk Check-Ins</span>
+            <CheckCircle2 size={18} />
           </div>
-          <div className="kpi-content">
-            <span className="kpi-number">{avgFillRate}%</span>
-            <span className="kpi-title">Avg Seat Capacity Fill</span>
-          </div>
+          <span className="text-2xl font-black text-slate-900 dark:text-white">
+            {totalCheckedIn}
+          </span>
+          <p className="text-xs text-slate-500 mt-0.5">Verified QR scans</p>
         </div>
 
-        <div className="kpi-card" onClick={() => setActiveSubTab('participants')}>
-          <div className="kpi-icon purple">
-            <CheckCircle2 size={22} />
+        <div className="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm">
+          <div className="flex items-center justify-between text-amber-500 dark:text-amber-400 mb-2">
+            <span className="text-xs font-bold uppercase tracking-wider text-slate-400">Avg Capacity Fill</span>
+            <TrendingUp size={18} />
           </div>
-          <div className="kpi-content">
-            <span className="kpi-number">{totalCheckedIn}</span>
-            <span className="kpi-title">Verified Check-Ins</span>
-          </div>
+          <span className="text-2xl font-black text-slate-900 dark:text-white">
+            {avgFillRate}%
+          </span>
+          <p className="text-xs text-slate-500 mt-0.5">Attendance demand</p>
         </div>
       </div>
 
       {/* Navigation Sub-Tabs */}
-      <div className="dashboard-sub-nav">
+      <div className="flex items-center gap-2 border-b border-slate-200 dark:border-slate-800 pb-3 overflow-x-auto">
         <button
-          className={`sub-nav-btn ${activeSubTab === 'manage-events' ? 'active' : ''}`}
           onClick={() => setActiveSubTab('manage-events')}
+          className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-bold flex items-center gap-2 transition-all ${
+            activeSubTab === 'manage-events'
+              ? 'bg-indigo-600 text-white shadow-xs'
+              : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
+          }`}
         >
           <Layers size={16} />
-          <span>Manage Events ({hostEvents.length})</span>
+          <span>My Events ({hostEvents.length})</span>
         </button>
+
         <button
-          className={`sub-nav-btn ${activeSubTab === 'create-event' ? 'active' : ''}`}
-          onClick={() => {
-            setActiveSubTab('create-event');
-            setWizardStep(1);
-          }}
-        >
-          <PlusCircle size={16} />
-          <span>Create New Event</span>
-        </button>
-        <button
-          className={`sub-nav-btn ${activeSubTab === 'participants' ? 'active' : ''}`}
           onClick={() => setActiveSubTab('participants')}
+          className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-bold flex items-center gap-2 transition-all ${
+            activeSubTab === 'participants'
+              ? 'bg-indigo-600 text-white shadow-xs'
+              : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
+          }`}
         >
           <Users size={16} />
-          <span>Participants & Check-in ({totalHostRegistrations.length})</span>
+          <span>Attendee Desk & Roster ({totalHostRegistrations.length})</span>
         </button>
+
         <button
-          className={`sub-nav-btn ${activeSubTab === 'analytics' ? 'active' : ''}`}
           onClick={() => setActiveSubTab('analytics')}
+          className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-bold flex items-center gap-2 transition-all ${
+            activeSubTab === 'analytics'
+              ? 'bg-indigo-600 text-white shadow-xs'
+              : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
+          }`}
         >
-          <TrendingUp size={16} />
+          <Activity size={16} />
           <span>Analytics & Reports</span>
+        </button>
+
+        <button
+          onClick={() => setActiveSubTab('create-event')}
+          className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-bold flex items-center gap-2 transition-all ${
+            activeSubTab === 'create-event'
+              ? 'bg-indigo-600 text-white shadow-xs'
+              : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
+          }`}
+        >
+          <PlusCircle size={16} />
+          <span>Create Event Wizard</span>
         </button>
       </div>
 
-      {/* =========================================================
-          SUB-TAB 1: MANAGE EVENTS
-      ========================================================= */}
+      {/* TAB 1: MANAGE EVENTS TABLE */}
       {activeSubTab === 'manage-events' && (
-        <div className="dashboard-tab-content">
-          <div className="content-section-header">
-            <div>
-              <h3>Hosted Events Directory</h3>
-              <p>Monitor registrations, track seat capacity, and manage published schedules.</p>
-            </div>
-            {/* Filter buttons */}
-            <div className="table-filter-pills">
-              <button
-                className={`filter-pill-btn ${eventFilterStatus === 'all' ? 'active' : ''}`}
-                onClick={() => setEventFilterStatus('all')}
+        <div className="space-y-4">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-bold text-slate-500">Filter Status:</span>
+              <select
+                value={eventFilterStatus}
+                onChange={(e) => setEventFilterStatus(e.target.value)}
+                className="px-3 py-1.5 text-xs font-semibold rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white"
               >
-                All ({hostEvents.length})
-              </button>
-              <button
-                className={`filter-pill-btn ${eventFilterStatus === 'published' ? 'active' : ''}`}
-                onClick={() => setEventFilterStatus('published')}
-              >
-                Published
-              </button>
-              <button
-                className={`filter-pill-btn ${eventFilterStatus === 'cancelled' ? 'active' : ''}`}
-                onClick={() => setEventFilterStatus('cancelled')}
-              >
-                Cancelled
-              </button>
+                <option value="all">All Events</option>
+                <option value="published">Published</option>
+                <option value="cancelled">Cancelled</option>
+              </select>
             </div>
           </div>
 
-          {filteredEvents.length === 0 ? (
-            <div className="empty-state-box">
-              <Layers size={40} className="empty-icon text-gray-400" />
-              <h4>No Events Found</h4>
-              <p>Create your first hackathon or workshop with our simple wizard.</p>
-              <button
-                className="primary-action-btn"
-                onClick={() => setActiveSubTab('create-event')}
-              >
-                Create Event Now
-              </button>
-            </div>
-          ) : (
-            <div className="host-events-table-wrapper">
-              <table className="custom-data-table">
-                <thead>
-                  <tr>
-                    <th>Event Details</th>
-                    <th>Date & Mode</th>
-                    <th>Capacity & Registrations</th>
-                    <th>Status</th>
-                    <th>Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredEvents.map((evt) => {
-                    const capPercent = Math.min(100, Math.round((evt.registeredCount / evt.maxCapacity) * 100));
-                    return (
-                      <tr key={evt.id}>
-                        <td>
-                          <div className="table-event-info">
-                            <img src={evt.bannerUrl} alt="" className="table-event-thumb" />
-                            <div>
-                              <strong className="table-event-title">{evt.title}</strong>
-                              <span className="table-category-tag">{evt.categoryLabel}</span>
-                            </div>
-                          </div>
-                        </td>
-
-                        <td>
-                          <div className="table-date-cell">
-                            <span>{new Date(evt.startDate).toLocaleDateString()}</span>
-                            <small>{evt.mode} ({evt.location})</small>
-                          </div>
-                        </td>
-
-                        <td>
-                          <div className="table-capacity-cell">
-                            <div className="cap-progress-header">
-                              <strong>{evt.registeredCount} / {evt.maxCapacity}</strong>
-                              <span>{capPercent}%</span>
-                            </div>
-                            <div className="table-cap-track">
-                              <div
-                                className="table-cap-fill"
-                                style={{ width: `${capPercent}%` }}
-                              ></div>
-                            </div>
-                            {evt.waitlistCount > 0 && (
-                              <span className="waitlist-tag">Waitlist: {evt.waitlistCount}</span>
-                            )}
-                          </div>
-                        </td>
-
-                        <td>
-                          <span className={`status-badge-pill ${evt.status}`}>
-                            {evt.status.toUpperCase()}
+          <div className="overflow-x-auto rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm">
+            <table className="w-full text-left text-xs">
+              <thead className="bg-slate-50 dark:bg-slate-800/80 border-b border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider">
+                <tr>
+                  <th className="p-4">Event Details</th>
+                  <th className="p-4">Format</th>
+                  <th className="p-4">Registrations / Cap</th>
+                  <th className="p-4">Status</th>
+                  <th className="p-4 text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                {filteredEvents.map((evt) => (
+                  <tr key={evt.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+                    <td className="p-4">
+                      <div className="flex items-center gap-3">
+                        <img
+                          src={evt.bannerUrl}
+                          alt=""
+                          className="w-12 h-9 rounded-lg object-cover flex-shrink-0"
+                        />
+                        <div>
+                          <span className="font-bold text-slate-900 dark:text-white text-sm block">
+                            {evt.title}
                           </span>
-                        </td>
-
-                        <td>
-                          <div className="table-actions-cell">
-                            <button
-                              className="btn-table-icon"
-                              title="View Event Details"
-                              onClick={() => onSelectEvent(evt)}
-                            >
-                              <Eye size={16} />
-                            </button>
-                            <button
-                              className="btn-table-icon"
-                              title="View Registered Participants"
-                              onClick={() => {
-                                setSelectedEventForRoster(evt.id);
-                                setActiveSubTab('participants');
-                              }}
-                            >
-                              <Users size={16} />
-                            </button>
-                            {evt.status !== 'cancelled' && (
-                              <button
-                                className="btn-table-icon text-red-500"
-                                title="Cancel Event"
-                                onClick={() => setCancelModalEventId(evt.id)}
-                              >
-                                <XCircle size={16} />
-                              </button>
-                            )}
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* =========================================================
-          SUB-TAB 2: CREATE EVENT WIZARD
-      ========================================================= */}
-      {activeSubTab === 'create-event' && (
-        <div className="dashboard-tab-content">
-          <div className="wizard-container">
-            {/* Wizard Steps Header */}
-            <div className="wizard-steps-header">
-              <div className={`wizard-step-node ${wizardStep >= 1 ? 'active' : ''}`}>
-                <div className="step-circle">1</div>
-                <span>Basic Info</span>
-              </div>
-              <div className="step-connector"></div>
-              <div className={`wizard-step-node ${wizardStep >= 2 ? 'active' : ''}`}>
-                <div className="step-circle">2</div>
-                <span>Schedule & Speakers</span>
-              </div>
-              <div className="step-connector"></div>
-              <div className={`wizard-step-node ${wizardStep >= 3 ? 'active' : ''}`}>
-                <div className="step-circle">3</div>
-                <span>Capacity & Pricing</span>
-              </div>
-              <div className="step-connector"></div>
-              <div className={`wizard-step-node ${wizardStep >= 4 ? 'active' : ''}`}>
-                <div className="step-circle">4</div>
-                <span>Preview & Publish</span>
-              </div>
-            </div>
-
-            {/* STEP 1: BASIC INFO */}
-            {wizardStep === 1 && (
-              <div className="wizard-panel">
-                <h3>Step 1: Event Fundamentals</h3>
-                <p className="wizard-sub">Define the title, format, category, and core description.</p>
-
-                <div className="wizard-form-grid">
-                  <div className="auth-field col-span-2">
-                    <label>Event Title *</label>
-                    <input
-                      type="text"
-                      placeholder="e.g. NextGen Web3 & AI Hackathon 2026"
-                      value={newEventData.title}
-                      onChange={(e) => setNewEventData({ ...newEventData, title: e.target.value })}
-                      required
-                    />
-                  </div>
-
-                  <div className="auth-field">
-                    <label>Category *</label>
-                    <select
-                      value={newEventData.category}
-                      onChange={(e) => {
-                        const labels = {
-                          hackathon: 'Hackathon',
-                          workshop: 'Workshop',
-                          conference: 'Conference',
-                          cultural: 'Cultural Fest',
-                          competition: 'Business Competition',
-                          webinar: 'Webinar'
-                        };
-                        setNewEventData({
-                          ...newEventData,
-                          category: e.target.value,
-                          categoryLabel: labels[e.target.value] || 'Event'
-                        });
-                      }}
-                    >
-                      <option value="hackathon">Hackathon</option>
-                      <option value="workshop">Workshop & Bootcamp</option>
-                      <option value="conference">Conference & Summit</option>
-                      <option value="cultural">Cultural Fest</option>
-                      <option value="competition">Business Competition</option>
-                      <option value="webinar">Webinar</option>
-                    </select>
-                  </div>
-
-                  <div className="auth-field">
-                    <label>Event Mode *</label>
-                    <select
-                      value={newEventData.mode}
-                      onChange={(e) => setNewEventData({ ...newEventData, mode: e.target.value })}
-                    >
-                      <option value="Online">Online / Virtual</option>
-                      <option value="In-Person">In-Person / On Campus</option>
-                      <option value="Hybrid">Hybrid (Both)</option>
-                    </select>
-                  </div>
-
-                  <div className="auth-field col-span-2">
-                    <label>Venue / Streaming Platform *</label>
-                    <input
-                      type="text"
-                      placeholder="e.g. Campus Auditorium / Live Zoom & Discord"
-                      value={newEventData.location}
-                      onChange={(e) => setNewEventData({ ...newEventData, location: e.target.value })}
-                      required
-                    />
-                  </div>
-
-                  <div className="auth-field col-span-2">
-                    <label>Catchy Tagline</label>
-                    <input
-                      type="text"
-                      placeholder="e.g. Build innovative solutions and compete for prizes"
-                      value={newEventData.tagline}
-                      onChange={(e) => setNewEventData({ ...newEventData, tagline: e.target.value })}
-                    />
-                  </div>
-
-                  <div className="auth-field col-span-2">
-                    <label>Banner Image URL</label>
-                    <input
-                      type="url"
-                      placeholder="https://images.unsplash.com/..."
-                      value={newEventData.bannerUrl}
-                      onChange={(e) => setNewEventData({ ...newEventData, bannerUrl: e.target.value })}
-                    />
-                  </div>
-
-                  <div className="auth-field col-span-2">
-                    <label>Full Event Description *</label>
-                    <textarea
-                      rows="4"
-                      placeholder="Describe the opportunity, key rounds, guidelines, and benefits..."
-                      value={newEventData.description}
-                      onChange={(e) => setNewEventData({ ...newEventData, description: e.target.value })}
-                      required
-                    ></textarea>
-                  </div>
-                </div>
-
-                <div className="wizard-actions">
-                  <div></div>
-                  <button
-                    className="wizard-next-btn"
-                    onClick={() => {
-                      if (!newEventData.title || !newEventData.location || !newEventData.description) {
-                        showToast('Please fill out all required fields in Step 1.', 'warning');
-                        return;
-                      }
-                      setWizardStep(2);
-                    }}
-                  >
-                    <span>Next: Schedule & Agenda</span>
-                    <ArrowRight size={16} />
-                  </button>
-                </div>
-              </div>
-            )}
-
-            {/* STEP 2: SCHEDULE & SPEAKERS */}
-            {wizardStep === 2 && (
-              <div className="wizard-panel">
-                <h3>Step 2: Dates, Schedule & Speakers</h3>
-                <p className="wizard-sub">Define the event timeline and keynote sessions.</p>
-
-                <div className="wizard-form-grid">
-                  <div className="auth-field">
-                    <label>Start Date *</label>
-                    <input
-                      type="date"
-                      value={newEventData.startDate}
-                      onChange={(e) => setNewEventData({ ...newEventData, startDate: e.target.value })}
-                      required
-                    />
-                  </div>
-
-                  <div className="auth-field">
-                    <label>End Date *</label>
-                    <input
-                      type="date"
-                      value={newEventData.endDate}
-                      onChange={(e) => setNewEventData({ ...newEventData, endDate: e.target.value })}
-                      required
-                    />
-                  </div>
-
-                  <div className="auth-field col-span-2">
-                    <label>Registration Deadline *</label>
-                    <input
-                      type="datetime-local"
-                      value={newEventData.registrationDeadline}
-                      onChange={(e) => setNewEventData({ ...newEventData, registrationDeadline: e.target.value })}
-                      required
-                    />
-                  </div>
-                </div>
-
-                {/* Preconfigured schedule preview */}
-                <div className="wizard-schedule-preview">
-                  <h4>Structured Day 1 Agenda Sample:</h4>
-                  <div className="schedule-preview-box">
-                    <div className="preview-session-row">
-                      <span>10:00 AM - 11:30 AM</span>
-                      <strong>Opening Keynote & Challenge Unveiling</strong>
-                    </div>
-                    <div className="preview-session-row">
-                      <span>02:00 PM - 04:00 PM</span>
-                      <strong>Technical Hands-on Mentorship</strong>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="wizard-actions">
-                  <button className="wizard-back-btn" onClick={() => setWizardStep(1)}>
-                    <ArrowLeft size={16} /> Back
-                  </button>
-                  <button
-                    className="wizard-next-btn"
-                    onClick={() => {
-                      if (!newEventData.startDate || !newEventData.endDate || !newEventData.registrationDeadline) {
-                        showToast('Please set event dates and registration deadline.', 'warning');
-                        return;
-                      }
-                      setWizardStep(3);
-                    }}
-                  >
-                    <span>Next: Capacity & Pricing</span>
-                    <ArrowRight size={16} />
-                  </button>
-                </div>
-              </div>
-            )}
-
-            {/* STEP 3: CAPACITY & PRICING */}
-            {wizardStep === 3 && (
-              <div className="wizard-panel">
-                <h3>Step 3: Participant Capacity & Pricing Rules</h3>
-                <p className="wizard-sub">Control seat limits, waitlists, and tickets.</p>
-
-                <div className="wizard-form-grid">
-                  <div className="auth-field">
-                    <label>Maximum Participant Capacity *</label>
-                    <input
-                      type="number"
-                      min="10"
-                      max="10000"
-                      value={newEventData.maxCapacity}
-                      onChange={(e) => setNewEventData({ ...newEventData, maxCapacity: parseInt(e.target.value) || 100 })}
-                      required
-                    />
-                  </div>
-
-                  <div className="auth-field">
-                    <label>Team Format</label>
-                    <select
-                      value={newEventData.teamSize}
-                      onChange={(e) => setNewEventData({ ...newEventData, teamSize: e.target.value })}
-                    >
-                      <option value="Individual">Individual (1 Person)</option>
-                      <option value="1 - 3 Members">1 - 3 Members</option>
-                      <option value="1 - 4 Members">1 - 4 Members</option>
-                      <option value="1 - 5 Members">1 - 5 Members</option>
-                    </select>
-                  </div>
-
-                  <div className="auth-field col-span-2">
-                    <label className="checkbox-toggle-label">
-                      <input
-                        type="checkbox"
-                        checked={newEventData.allowWaitlist}
-                        onChange={(e) => setNewEventData({ ...newEventData, allowWaitlist: e.target.checked })}
-                      />
-                      <span>Enable Automated Waitlist when maximum capacity is reached</span>
-                    </label>
-                  </div>
-
-                  <div className="auth-field col-span-2">
-                    <label>Registration Fee</label>
-                    <div className="fee-toggle-row">
-                      <button
-                        type="button"
-                        className={`fee-choice-btn ${newEventData.isFree ? 'active' : ''}`}
-                        onClick={() => setNewEventData({ ...newEventData, isFree: true, price: 0 })}
-                      >
-                        Free Registration (₹0)
-                      </button>
-                      <button
-                        type="button"
-                        className={`fee-choice-btn ${!newEventData.isFree ? 'active' : ''}`}
-                        onClick={() => setNewEventData({ ...newEventData, isFree: false, price: 199 })}
-                      >
-                        Paid Ticket Pass
-                      </button>
-                    </div>
-                  </div>
-
-                  {!newEventData.isFree && (
-                    <div className="auth-field col-span-2">
-                      <label>Ticket Price (INR ₹) *</label>
-                      <input
-                        type="number"
-                        min="50"
-                        value={newEventData.price}
-                        onChange={(e) => setNewEventData({ ...newEventData, price: parseInt(e.target.value) || 0 })}
-                        required
-                      />
-                    </div>
-                  )}
-                </div>
-
-                <div className="wizard-actions">
-                  <button className="wizard-back-btn" onClick={() => setWizardStep(2)}>
-                    <ArrowLeft size={16} /> Back
-                  </button>
-                  <button className="wizard-next-btn" onClick={() => setWizardStep(4)}>
-                    <span>Next: Review & Publish</span>
-                    <ArrowRight size={16} />
-                  </button>
-                </div>
-              </div>
-            )}
-
-            {/* STEP 4: PREVIEW & PUBLISH */}
-            {wizardStep === 4 && (
-              <div className="wizard-panel">
-                <h3>Step 4: Final Review & Publish</h3>
-                <p className="wizard-sub">Verify event details before publishing to the platform catalog.</p>
-
-                <div className="publish-preview-card">
-                  <img src={newEventData.bannerUrl} alt="" className="preview-banner" />
-                  <div className="preview-body">
-                    <span className="category-tag">{newEventData.categoryLabel}</span>
-                    <h4>{newEventData.title}</h4>
-                    <p className="preview-tagline">{newEventData.tagline}</p>
-                    <div className="preview-specs-grid">
-                      <div>📍 {newEventData.location} ({newEventData.mode})</div>
-                      <div>📅 {newEventData.startDate} to {newEventData.endDate}</div>
-                      <div>👥 Capacity: {newEventData.maxCapacity} participants</div>
-                      <div>💰 Price: {newEventData.isFree ? 'FREE' : `₹${newEventData.price}`}</div>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="wizard-actions">
-                  <button className="wizard-back-btn" onClick={() => setWizardStep(3)}>
-                    <ArrowLeft size={16} /> Back
-                  </button>
-                  <button className="wizard-publish-btn" onClick={handleCreateSubmit}>
-                    <Sparkles size={16} />
-                    <span>Publish Event Live to EventHub</span>
-                  </button>
-                </div>
-              </div>
-            )}
+                          <span className="text-[11px] text-slate-500">
+                            {new Date(evt.startDate).toLocaleDateString()} • {evt.categoryLabel || evt.category}
+                          </span>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="p-4 text-slate-600 dark:text-slate-400">
+                      {evt.mode}
+                    </td>
+                    <td className="p-4">
+                      <div className="space-y-1">
+                        <div className="flex items-center justify-between text-[11px] font-semibold">
+                          <span>{evt.registeredCount} / {evt.maxCapacity}</span>
+                          <span className="text-indigo-600 dark:text-indigo-400">
+                            {Math.round((evt.registeredCount / evt.maxCapacity) * 100)}%
+                          </span>
+                        </div>
+                        <div className="w-28 h-1.5 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden">
+                          <div
+                            className="h-full bg-indigo-600 rounded-full"
+                            style={{ width: `${Math.min(100, (evt.registeredCount / evt.maxCapacity) * 100)}%` }}
+                          />
+                        </div>
+                      </div>
+                    </td>
+                    <td className="p-4">
+                      <span className={`px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider ${
+                        evt.status === 'published'
+                          ? 'bg-emerald-50 dark:bg-emerald-950/80 text-emerald-600 dark:text-emerald-400'
+                          : 'bg-rose-50 dark:bg-rose-950/80 text-rose-600 dark:text-rose-400'
+                      }`}>
+                        {evt.status}
+                      </span>
+                    </td>
+                    <td className="p-4 text-right">
+                      <div className="flex items-center justify-end gap-2">
+                        <button
+                          onClick={() => onSelectEvent(evt)}
+                          className="p-1.5 rounded-lg text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800"
+                          title="Preview Detail View"
+                        >
+                          <Eye size={16} />
+                        </button>
+                        {evt.status === 'published' && (
+                          <button
+                            onClick={() => setCancelModalEventId(evt.id)}
+                            className="p-1.5 rounded-lg text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/40"
+                            title="Cancel Event"
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         </div>
       )}
 
-      {/* =========================================================
-          SUB-TAB 3: PARTICIPANT MANAGEMENT & ROSTER
-      ========================================================= */}
+      {/* TAB 2: PARTICIPANTS ROSTER & DESK CHECK-IN */}
       {activeSubTab === 'participants' && (
-        <div className="dashboard-tab-content">
-          <div className="content-section-header">
-            <div>
-              <h3>Participant Roster & Entry Check-in</h3>
-              <p>Monitor registrations, verify digital pass QR tickets, and check-in attendees.</p>
-            </div>
-            <button className="btn-export-csv" onClick={handleExportCSV}>
-              <Download size={15} />
-              <span>Export CSV</span>
-            </button>
-          </div>
+        <div className="space-y-4">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="flex flex-wrap items-center gap-2">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={14} />
+                <input
+                  type="text"
+                  placeholder="Search attendee by name, email, ticket..."
+                  value={rosterSearch}
+                  onChange={(e) => setRosterSearch(e.target.value)}
+                  className="pl-8 pr-3 py-1.5 text-xs rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white"
+                />
+              </div>
 
-          {/* Roster Filters */}
-          <div className="roster-filters-bar">
-            <div className="roster-select-group">
-              <label>Filter by Event:</label>
               <select
                 value={selectedEventForRoster}
                 onChange={(e) => setSelectedEventForRoster(e.target.value)}
+                className="px-3 py-1.5 text-xs font-semibold rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white"
               >
-                <option value="all">All Hosted Events</option>
-                {hostEvents.map((evt) => (
-                  <option key={evt.id} value={evt.id}>{evt.title}</option>
+                <option value="all">All Events Roster</option>
+                {hostEvents.map(e => (
+                  <option key={e.id} value={e.id}>{e.title}</option>
                 ))}
               </select>
             </div>
 
-            <div className="roster-search-box">
-              <Search size={16} />
+            <button
+              onClick={handleExportCSV}
+              className="btn-secondary !py-1.5 !px-3 text-xs"
+            >
+              <Download size={14} />
+              <span>Export CSV</span>
+            </button>
+          </div>
+
+          <div className="overflow-x-auto rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm">
+            <table className="w-full text-left text-xs">
+              <thead className="bg-slate-50 dark:bg-slate-800/80 border-b border-slate-200 dark:border-slate-800 text-slate-500 font-bold uppercase tracking-wider">
+                <tr>
+                  <th className="p-4">Ticket ID</th>
+                  <th className="p-4">Attendee Name</th>
+                  <th className="p-4">Affiliation / Org</th>
+                  <th className="p-4">Target Event</th>
+                  <th className="p-4">Status</th>
+                  <th className="p-4 text-center">Desk Check-In</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                {rosterParticipants.map((reg) => (
+                  <tr key={reg.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+                    <td className="p-4 font-mono font-bold text-indigo-600 dark:text-indigo-400">
+                      {reg.ticketId}
+                    </td>
+                    <td className="p-4">
+                      <strong className="text-slate-900 dark:text-white block">{reg.userName}</strong>
+                      <span className="text-[11px] text-slate-400">{reg.userEmail}</span>
+                    </td>
+                    <td className="p-4 text-slate-600 dark:text-slate-400">
+                      {reg.affiliation}
+                    </td>
+                    <td className="p-4 text-slate-700 dark:text-slate-300 font-medium">
+                      {reg.eventTitle}
+                    </td>
+                    <td className="p-4">
+                      <span className={`px-2 py-0.5 rounded-md text-[10px] font-bold uppercase ${
+                        reg.status === 'confirmed'
+                          ? 'bg-emerald-50 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400'
+                          : 'bg-amber-50 dark:bg-amber-950 text-amber-600 dark:text-amber-400'
+                      }`}>
+                        {reg.status}
+                      </span>
+                    </td>
+                    <td className="p-4 text-center">
+                      <button
+                        onClick={() => checkInAttendee(reg.id)}
+                        className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
+                          reg.checkedIn
+                            ? 'bg-emerald-600 text-white shadow-xs'
+                            : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200'
+                        }`}
+                      >
+                        {reg.checkedIn ? '✓ Checked In' : 'Scan & Check-In'}
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* TAB 3: ANALYTICS & CHARTS */}
+      {activeSubTab === 'analytics' && (
+        <div className="space-y-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Registration Trends Chart */}
+            <div className="p-6 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm space-y-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-base font-bold text-slate-900 dark:text-white">
+                    Registration Growth & Check-Ins
+                  </h3>
+                  <p className="text-xs text-slate-400">Daily ticket issuance tracking</p>
+                </div>
+                <TrendingUp size={18} className="text-indigo-500" />
+              </div>
+
+              <div className="h-64 w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart data={registrationTrendData}>
+                    <defs>
+                      <linearGradient id="regGradient" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#6366F1" stopOpacity={0.4} />
+                        <stop offset="95%" stopColor="#6366F1" stopOpacity={0} />
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#334155" opacity={0.2} />
+                    <XAxis dataKey="name" stroke="#94A3B8" fontSize={11} />
+                    <YAxis stroke="#94A3B8" fontSize={11} />
+                    <Tooltip
+                      contentStyle={{
+                        backgroundColor: '#1E293B',
+                        borderRadius: '0.75rem',
+                        border: 'none',
+                        color: '#fff',
+                        fontSize: '12px'
+                      }}
+                    />
+                    <Area type="monotone" dataKey="registrations" stroke="#6366F1" strokeWidth={2.5} fillOpacity={1} fill="url(#regGradient)" />
+                  </AreaChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+
+            {/* Category Breakdown */}
+            <div className="p-6 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm space-y-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-base font-bold text-slate-900 dark:text-white">
+                    Attendance by Category
+                  </h3>
+                  <p className="text-xs text-slate-400">Distribution across hosted formats</p>
+                </div>
+                <Layers size={18} className="text-purple-500" />
+              </div>
+
+              <div className="h-64 w-full flex items-center justify-center">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={categoryDistributionData}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={60}
+                      outerRadius={80}
+                      paddingAngle={5}
+                      dataKey="value"
+                    >
+                      {categoryDistributionData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.color} />
+                      ))}
+                    </Pie>
+                    <Tooltip
+                      contentStyle={{
+                        backgroundColor: '#1E293B',
+                        borderRadius: '0.75rem',
+                        border: 'none',
+                        color: '#fff',
+                        fontSize: '12px'
+                      }}
+                    />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+
+              <div className="flex flex-wrap items-center justify-center gap-4 text-xs">
+                {categoryDistributionData.map((item, idx) => (
+                  <div key={idx} className="flex items-center gap-1.5">
+                    <span className="w-3 h-3 rounded-full" style={{ backgroundColor: item.color }} />
+                    <span className="text-slate-600 dark:text-slate-300 font-medium">{item.name} ({item.value}%)</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* TAB 4: CREATE EVENT WIZARD */}
+      {activeSubTab === 'create-event' && (
+        <div className="max-w-3xl mx-auto p-6 sm:p-8 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm space-y-6">
+          <div>
+            <h2 className="text-xl font-bold text-slate-900 dark:text-white">
+              Create & Publish Event
+            </h2>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+              Configure event schedule, capacity limits, tickets, and awards.
+            </p>
+          </div>
+
+          <form onSubmit={handleCreateSubmit} className="space-y-4">
+            <div className="space-y-1">
+              <label className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                Event Title *
+              </label>
               <input
                 type="text"
-                placeholder="Search by participant name, email, or ticket ID..."
-                value={rosterSearch}
-                onChange={(e) => setRosterSearch(e.target.value)}
+                placeholder="e.g. Genesis AI Hackathon 2026"
+                value={newEventData.title}
+                onChange={(e) => setNewEventData({ ...newEventData, title: e.target.value })}
+                required
+                className="input-field"
               />
             </div>
-          </div>
 
-          {/* Table */}
-          {rosterParticipants.length === 0 ? (
-            <div className="empty-state-box">
-              <Users size={40} className="empty-icon text-gray-400" />
-              <h4>No Registered Participants Found</h4>
-              <p>There are no registrations matching your selected filters.</p>
-            </div>
-          ) : (
-            <div className="host-events-table-wrapper">
-              <table className="custom-data-table">
-                <thead>
-                  <tr>
-                    <th>Participant</th>
-                    <th>Ticket / Role</th>
-                    <th>Event</th>
-                    <th>Registration Date</th>
-                    <th>Attendance Check-In</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {rosterParticipants.map((reg) => (
-                    <tr key={reg.id}>
-                      <td>
-                        <div className="table-participant-info">
-                          <strong>{reg.userName}</strong>
-                          <small>{reg.userEmail}</small>
-                          <span className="participant-affiliation">{reg.affiliation}</span>
-                        </div>
-                      </td>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <label className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                  Category *
+                </label>
+                <select
+                  value={newEventData.category}
+                  onChange={(e) => setNewEventData({
+                    ...newEventData,
+                    category: e.target.value,
+                    categoryLabel: e.target.options[e.target.selectedIndex].text
+                  })}
+                  className="input-field"
+                >
+                  <option value="hackathon">Hackathon</option>
+                  <option value="workshop">Workshop</option>
+                  <option value="tech-talk">Tech Talk & Summit</option>
+                  <option value="cultural">Cultural Festival</option>
+                  <option value="case-comp">Case Competition</option>
+                </select>
+              </div>
 
-                      <td>
-                        <div className="table-ticket-cell">
-                          <span className="ticket-code-tag">#{reg.ticketId}</span>
-                          <span className={`role-chip-sm ${reg.userRole}`}>{reg.userRole}</span>
-                        </div>
-                      </td>
-
-                      <td>
-                        <div className="table-event-cell">
-                          <span>{reg.eventTitle}</span>
-                        </div>
-                      </td>
-
-                      <td>
-                        <span className="table-date-text">
-                          {new Date(reg.registrationDate).toLocaleDateString()}
-                        </span>
-                      </td>
-
-                      <td>
-                        <button
-                          className={`btn-checkin-toggle ${reg.checkedIn ? 'checked' : 'pending'}`}
-                          onClick={() => checkInAttendee(reg.id)}
-                        >
-                          {reg.checkedIn ? (
-                            <>
-                              <Check size={14} />
-                              <span>Checked In</span>
-                            </>
-                          ) : (
-                            <>
-                              <QrCode size={14} />
-                              <span>Check In Pass</span>
-                            </>
-                          )}
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* =========================================================
-          SUB-TAB 4: ANALYTICS & INSIGHTS
-      ========================================================= */}
-      {activeSubTab === 'analytics' && (
-        <div className="dashboard-tab-content">
-          <div className="content-section-header">
-            <div>
-              <h3>Event Engagement Analytics & Insights</h3>
-              <p>Real-time analytics on attendance, demographic distributions, and capacity velocity.</p>
-            </div>
-          </div>
-
-          <div className="analytics-grid">
-            {/* Demographic Distribution Card */}
-            <div className="analytics-widget-card">
-              <h4>Participant Demographics</h4>
-              <p className="widget-sub">Ratio of College Students vs Working Professionals</p>
-
-              <div className="demographic-bar-wrapper">
-                <div className="demo-metric-row">
-                  <span>🎓 Students</span>
-                  <strong>
-                    {totalHostRegistrations.filter(r => r.userRole === 'student').length} (
-                    {totalHostRegistrations.length > 0
-                      ? Math.round(
-                          (totalHostRegistrations.filter(r => r.userRole === 'student').length /
-                            totalHostRegistrations.length) *
-                            100
-                        )
-                      : 0}
-                    %)
-                  </strong>
-                </div>
-                <div className="metric-bar">
-                  <div
-                    className="metric-bar-fill blue"
-                    style={{
-                      width: `${
-                        totalHostRegistrations.length > 0
-                          ? (totalHostRegistrations.filter(r => r.userRole === 'student').length /
-                              totalHostRegistrations.length) *
-                            100
-                          : 50
-                      }%`
-                    }}
-                  ></div>
-                </div>
-
-                <div className="demo-metric-row mt-4">
-                  <span>💼 Working Professionals</span>
-                  <strong>
-                    {totalHostRegistrations.filter(r => r.userRole === 'employee').length} (
-                    {totalHostRegistrations.length > 0
-                      ? Math.round(
-                          (totalHostRegistrations.filter(r => r.userRole === 'employee').length /
-                            totalHostRegistrations.length) *
-                            100
-                        )
-                      : 0}
-                    %)
-                  </strong>
-                </div>
-                <div className="metric-bar">
-                  <div
-                    className="metric-bar-fill purple"
-                    style={{
-                      width: `${
-                        totalHostRegistrations.length > 0
-                          ? (totalHostRegistrations.filter(r => r.userRole === 'employee').length /
-                              totalHostRegistrations.length) *
-                            100
-                          : 50
-                      }%`
-                    }}
-                  ></div>
-                </div>
+              <div className="space-y-1">
+                <label className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                  Event Format *
+                </label>
+                <select
+                  value={newEventData.mode}
+                  onChange={(e) => setNewEventData({ ...newEventData, mode: e.target.value })}
+                  className="input-field"
+                >
+                  <option value="Hybrid">Hybrid (Campus + Online)</option>
+                  <option value="Online">100% Online / Virtual</option>
+                  <option value="In-Person">In-Person / Offline Only</option>
+                </select>
               </div>
             </div>
 
-            {/* Attendance Check-in Rate Card */}
-            <div className="analytics-widget-card">
-              <h4>Attendance Check-In Velocity</h4>
-              <p className="widget-sub">Conversion of registered tickets to live verified check-ins</p>
+            <div className="space-y-1">
+              <label className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                Tagline / Summary
+              </label>
+              <input
+                type="text"
+                placeholder="Brief high-impact one-liner about the event..."
+                value={newEventData.tagline}
+                onChange={(e) => setNewEventData({ ...newEventData, tagline: e.target.value })}
+                required
+                className="input-field"
+              />
+            </div>
 
-              <div className="attendance-gauge-box">
-                <div className="gauge-number">
-                  {totalHostRegistrations.length > 0
-                    ? Math.round((totalCheckedIn / totalHostRegistrations.length) * 100)
-                    : 0}
-                  %
+            <div className="space-y-1">
+              <label className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                Detailed Description & Problem Statement
+              </label>
+              <textarea
+                rows={3}
+                placeholder="Comprehensive description of tracks, perks, and eligibility..."
+                value={newEventData.description}
+                onChange={(e) => setNewEventData({ ...newEventData, description: e.target.value })}
+                required
+                className="input-field"
+              />
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div className="space-y-1">
+                <label className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                  Max Capacity
+                </label>
+                <input
+                  type="number"
+                  value={newEventData.maxCapacity}
+                  onChange={(e) => setNewEventData({ ...newEventData, maxCapacity: parseInt(e.target.value) || 100 })}
+                  required
+                  className="input-field"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                  Free or Paid
+                </label>
+                <select
+                  value={newEventData.isFree ? 'free' : 'paid'}
+                  onChange={(e) => setNewEventData({
+                    ...newEventData,
+                    isFree: e.target.value === 'free',
+                    price: e.target.value === 'free' ? 0 : 499
+                  })}
+                  className="input-field"
+                >
+                  <option value="free">Free for All</option>
+                  <option value="paid">Paid Delegate Ticket</option>
+                </select>
+              </div>
+
+              {!newEventData.isFree && (
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                    Price (₹)
+                  </label>
+                  <input
+                    type="number"
+                    value={newEventData.price}
+                    onChange={(e) => setNewEventData({ ...newEventData, price: parseInt(e.target.value) || 0 })}
+                    className="input-field"
+                  />
                 </div>
-                <span className="gauge-label">Check-in Rate</span>
-                <p className="gauge-sub">
-                  {totalCheckedIn} of {totalHostRegistrations.length} attendees verified at entry
+              )}
+            </div>
+
+            <button type="submit" className="w-full btn-primary !py-3">
+              <span>Publish Event to Catalog</span>
+              <ArrowRight size={16} />
+            </button>
+          </form>
+        </div>
+      )}
+
+      {/* Cancel Event Confirm Modal */}
+      <AnimatePresence>
+        {cancelModalEventId && (
+          <div className="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-md flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="w-full max-w-md bg-white dark:bg-slate-900 rounded-3xl p-6 shadow-2xl border border-slate-200 dark:border-slate-800 space-y-4"
+            >
+              <div className="w-12 h-12 rounded-2xl bg-rose-500/15 text-rose-500 flex items-center justify-center">
+                <AlertCircle size={24} />
+              </div>
+              <div>
+                <h3 className="text-lg font-bold text-slate-900 dark:text-white">
+                  Cancel This Event?
+                </h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 leading-relaxed">
+                  All registered attendees will be dispatched automated cancellation notifications and the event will be unlisted.
                 </p>
               </div>
-            </div>
-          </div>
-        </div>
-      )}
 
-      {/* Cancel Event Modal */}
-      {cancelModalEventId && (
-        <div className="modal-backdrop-overlay" onClick={() => setCancelModalEventId(null)}>
-          <div className="confirmation-modal-box" onClick={(e) => e.stopPropagation()}>
-            <AlertCircle size={36} className="text-red-500 mb-2" />
-            <h3>Cancel Hosted Event?</h3>
-            <p>
-              Cancelling this event will immediately notify all registered participants,
-              cancel all issued tickets, and archive the public listing.
-            </p>
-            <div className="confirm-modal-actions">
-              <button className="btn-cancel-modal-back" onClick={() => setCancelModalEventId(null)}>
-                Keep Event Active
-              </button>
-              <button
-                className="btn-cancel-modal-confirm"
-                onClick={() => handleConfirmCancelEvent(cancelModalEventId)}
-              >
-                Yes, Cancel Event
-              </button>
-            </div>
+              <div className="flex items-center gap-3 pt-2">
+                <button
+                  onClick={() => setCancelModalEventId(null)}
+                  className="flex-1 btn-secondary !py-2 text-xs"
+                >
+                  Keep Event Active
+                </button>
+                <button
+                  onClick={() => handleConfirmCancelEvent(cancelModalEventId)}
+                  className="flex-1 btn-danger !py-2 text-xs"
+                >
+                  Confirm Cancellation
+                </button>
+              </div>
+            </motion.div>
           </div>
-        </div>
-      )}
+        )}
+      </AnimatePresence>
     </div>
   );
 };

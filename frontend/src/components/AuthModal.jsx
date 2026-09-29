@@ -1,20 +1,17 @@
-import React, { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useEventHub } from '../context/EventHubContext';
+import { motion } from 'framer-motion';
 import {
   X,
-  User,
-  Users,
   Building,
   GraduationCap,
   Briefcase,
-  ShieldCheck,
   Mail,
   Lock,
-  Phone,
   ArrowRight,
-  ArrowLeft,
-  CheckCircle2,
-  Sparkles
+  Sparkles,
+  Eye,
+  EyeOff
 } from 'lucide-react';
 
 export const AuthModal = ({ isOpen, onClose }) => {
@@ -22,24 +19,21 @@ export const AuthModal = ({ isOpen, onClose }) => {
     authMode,
     setAuthMode,
     authRoleTab,
-    setAuthRoleTab,
     login,
     signup,
     showToast
   } = useEventHub();
 
-  // Login form state
+  // Login state
   const [loginEmail, setLoginEmail] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
-  const [loginRole, setLoginRole] = useState(authRoleTab || 'student'); // 'student' | 'employee' | 'host' | 'admin'
+  const [showPassword, setShowPassword] = useState(false);
+  const [loginRole, setLoginRole] = useState(authRoleTab || 'student');
 
   // Signup flow state
-  // Step 1: 'select-type' (Event Register vs Event Host)
-  // Step 2: 'student' | 'employee' | 'host'
-  const [signupStep, setSignupStep] = useState('select-type');
-  const [signupSubRole, setSignupSubRole] = useState('student'); // 'student' | 'employee' | 'host'
+  const [signupType, setSignupType] = useState('student');
 
-  // Student form
+  // Forms
   const [studentForm, setStudentForm] = useState({
     name: '',
     email: '',
@@ -50,7 +44,6 @@ export const AuthModal = ({ isOpen, onClose }) => {
     password: ''
   });
 
-  // Employee form
   const [employeeForm, setEmployeeForm] = useState({
     name: '',
     company: '',
@@ -61,7 +54,6 @@ export const AuthModal = ({ isOpen, onClose }) => {
     password: ''
   });
 
-  // Host form
   const [hostForm, setHostForm] = useState({
     name: '',
     organizationName: '',
@@ -72,9 +64,16 @@ export const AuthModal = ({ isOpen, onClose }) => {
     password: ''
   });
 
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [onClose]);
+
   if (!isOpen) return null;
 
-  // 1-Click Demo Login fills
   const fillDemo = (role) => {
     if (role === 'student') {
       setLoginEmail('aarav@iitd.ac.in');
@@ -148,568 +147,457 @@ export const AuthModal = ({ isOpen, onClose }) => {
   };
 
   return (
-    <div className="modal-backdrop-overlay" onClick={onClose}>
-      <div className="auth-modal-container" onClick={(e) => e.stopPropagation()}>
-        {/* Close Button */}
-        <button className="modal-close-btn" onClick={onClose}>
-          <X size={20} />
+    <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-950/75 backdrop-blur-md flex items-center justify-center p-3 sm:p-4">
+      <motion.div
+        initial={{ opacity: 0, scale: 0.95, y: 16 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        exit={{ opacity: 0, scale: 0.95, y: 16 }}
+        transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
+        className="relative w-full max-w-4xl bg-white dark:bg-slate-900 rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden my-auto grid grid-cols-1 md:grid-cols-5"
+      >
+        {/* Floating Close Button */}
+        <button
+          onClick={onClose}
+          aria-label="Close modal"
+          className="absolute top-4 right-4 z-20 p-2 rounded-full bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-300 transition-colors"
+        >
+          <X size={18} />
         </button>
 
-        {/* Modal Top Brand Bar */}
-        <div className="auth-modal-header">
-          <div className="auth-brand-logo">
-            <span className="brand-badge-e">E</span>
-            <span className="auth-brand-text">Event<span>Hub</span></span>
-          </div>
-          <p className="auth-modal-subtitle">
-            {authMode === 'login'
-              ? 'Sign in to access your registered events, tickets & organizer tools.'
-              : 'Join thousands of innovators, students, professionals and hosts.'}
-          </p>
+        {/* Left Side: Illustration / Brand Panel (2 cols) */}
+        <div className="hidden md:flex md:col-span-2 bg-gradient-to-br from-indigo-600 via-indigo-700 to-purple-800 p-8 text-white flex-col justify-between relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl pointer-events-none" />
+          <div className="absolute bottom-0 left-0 w-64 h-64 bg-purple-500/20 rounded-full blur-3xl pointer-events-none" />
 
-          {/* Mode Switcher Tabs (Login vs Signup) */}
-          <div className="auth-mode-tabs">
-            <button
-              className={`auth-mode-tab ${authMode === 'login' ? 'active' : ''}`}
-              onClick={() => {
-                setAuthMode('login');
-                setSignupStep('select-type');
-              }}
-            >
-              Sign In
-            </button>
-            <button
-              className={`auth-mode-tab ${authMode === 'signup' ? 'active' : ''}`}
-              onClick={() => {
-                setAuthMode('signup');
-                setSignupStep('select-type');
-              }}
-            >
-              Create Account
-            </button>
+          <div className="relative z-10">
+            <div className="flex items-center gap-2.5 mb-6">
+              <div className="w-10 h-10 rounded-xl bg-white text-indigo-600 font-black text-xl flex items-center justify-center shadow-lg">
+                E
+              </div>
+              <span className="text-xl font-bold tracking-tight">EventHub</span>
+            </div>
+
+            <h3 className="text-2xl font-black leading-tight tracking-tight">
+              Unlock Premier Opportunities & Global Tech Conclaves.
+            </h3>
+            <p className="mt-3 text-xs text-indigo-100/90 leading-relaxed">
+              Connect directly with verified organizers, participate in nationwide hackathons, and manage dynamic delegate passes.
+            </p>
+          </div>
+
+          {/* Quick Demo Selector */}
+          <div className="relative z-10 p-3.5 rounded-2xl bg-white/10 backdrop-blur-md border border-white/20 space-y-2">
+            <div className="flex items-center gap-1.5 text-xs font-bold text-amber-300">
+              <Sparkles size={14} />
+              <span>1-Click Fast Demo Login:</span>
+            </div>
+            <div className="grid grid-cols-2 gap-1.5">
+              <button
+                type="button"
+                onClick={() => fillDemo('student')}
+                className="p-1.5 rounded-lg bg-white/15 hover:bg-white/25 text-[11px] font-semibold text-left transition-colors truncate"
+              >
+                🎓 Student
+              </button>
+              <button
+                type="button"
+                onClick={() => fillDemo('employee')}
+                className="p-1.5 rounded-lg bg-white/15 hover:bg-white/25 text-[11px] font-semibold text-left transition-colors truncate"
+              >
+                💼 Professional
+              </button>
+              <button
+                type="button"
+                onClick={() => fillDemo('host')}
+                className="p-1.5 rounded-lg bg-white/15 hover:bg-white/25 text-[11px] font-semibold text-left transition-colors truncate"
+              >
+                🏛️ Host / Org
+              </button>
+              <button
+                type="button"
+                onClick={() => fillDemo('admin')}
+                className="p-1.5 rounded-lg bg-white/15 hover:bg-white/25 text-[11px] font-semibold text-left transition-colors truncate"
+              >
+                🛡️ Super Admin
+              </button>
+            </div>
           </div>
         </div>
 
-        {/* ========================================================
-            MODE 1: LOGIN
-        ======================================================== */}
-        {authMode === 'login' && (
-          <div className="auth-panel-body">
-            {/* Role Category Tabs */}
-            <div className="login-role-tabs">
+        {/* Right Side: Interactive Forms (3 cols) */}
+        <div className="md:col-span-3 p-6 sm:p-8 flex flex-col justify-between max-h-[85vh] overflow-y-auto">
+          <div>
+            {/* Mode Switcher Tabs */}
+            <div className="flex p-1 rounded-xl bg-slate-100 dark:bg-slate-800 mb-6 max-w-xs">
               <button
-                type="button"
-                className={`login-role-tab ${loginRole === 'student' ? 'active' : ''}`}
-                onClick={() => {
-                  setLoginRole('student');
-                  fillDemo('student');
-                }}
-              >
-                <GraduationCap size={15} />
-                <span>Student</span>
-              </button>
-              <button
-                type="button"
-                className={`login-role-tab ${loginRole === 'employee' ? 'active' : ''}`}
-                onClick={() => {
-                  setLoginRole('employee');
-                  fillDemo('employee');
-                }}
-              >
-                <Briefcase size={15} />
-                <span>Professional</span>
-              </button>
-              <button
-                type="button"
-                className={`login-role-tab ${loginRole === 'host' ? 'active' : ''}`}
-                onClick={() => {
-                  setLoginRole('host');
-                  fillDemo('host');
-                }}
-              >
-                <Building size={15} />
-                <span>Event Host</span>
-              </button>
-              <button
-                type="button"
-                className={`login-role-tab ${loginRole === 'admin' ? 'active' : ''}`}
-                onClick={() => {
-                  setLoginRole('admin');
-                  fillDemo('admin');
-                }}
-              >
-                <ShieldCheck size={15} />
-                <span>Admin</span>
-              </button>
-            </div>
-
-            {/* Quick 1-Click Demo Fill Banner */}
-            <div className="demo-fill-card">
-              <div className="demo-fill-content">
-                <Sparkles size={15} className="text-amber-500" />
-                <span>Quick Test:</span>
-                <strong>
-                  {loginRole === 'student' && 'Aarav (Student @ IIT Delhi)'}
-                  {loginRole === 'employee' && 'Priya (Engineer @ Google)'}
-                  {loginRole === 'host' && 'Host Incharge @ GDG'}
-                  {loginRole === 'admin' && 'Platform Admin'}
-                </strong>
-              </div>
-              <button
-                type="button"
-                className="btn-demo-autofill"
-                onClick={() => fillDemo(loginRole)}
-              >
-                Auto-Fill
-              </button>
-            </div>
-
-            {/* Login Form */}
-            <form onSubmit={handleLoginSubmit} className="auth-form">
-              <div className="auth-field">
-                <label>Email Address</label>
-                <div className="input-with-icon">
-                  <Mail size={16} className="field-icon" />
-                  <input
-                    type="email"
-                    placeholder="Enter your registered email"
-                    value={loginEmail}
-                    onChange={(e) => setLoginEmail(e.target.value)}
-                    required
-                  />
-                </div>
-              </div>
-
-              <div className="auth-field">
-                <div className="field-label-row">
-                  <label>Password</label>
-                  <a href="#forgot" onClick={(e) => { e.preventDefault(); showToast('Password reset link sent to registered email.'); }} className="forgot-link">
-                    Forgot?
-                  </a>
-                </div>
-                <div className="input-with-icon">
-                  <Lock size={16} className="field-icon" />
-                  <input
-                    type="password"
-                    placeholder="Enter your password"
-                    value={loginPassword}
-                    onChange={(e) => setLoginPassword(e.target.value)}
-                    required
-                  />
-                </div>
-              </div>
-
-              <button type="submit" className="auth-submit-btn">
-                <span>Sign In to {loginRole.toUpperCase()} Dashboard</span>
-                <ArrowRight size={16} />
-              </button>
-            </form>
-
-            <div className="auth-footer-prompt">
-              <span>Don't have an account yet?</span>
-              <button
-                type="button"
-                className="text-btn-link"
-                onClick={() => {
-                  setAuthMode('signup');
-                  setSignupStep('select-type');
-                }}
-              >
-                Register Here
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* ========================================================
-            MODE 2: SIGN UP
-        ======================================================== */}
-        {authMode === 'signup' && (
-          <div className="auth-panel-body">
-            {/* STEP 1: SELECT ACCOUNT TYPE */}
-            {signupStep === 'select-type' && (
-              <div className="signup-select-step">
-                <h3>Choose Account Type</h3>
-                <p className="step-desc">Select how you want to use the EventHub platform:</p>
-
-                {/* Option 1: Event Register */}
-                <div className="signup-type-card" onClick={() => setSignupStep('select-attendee-type')}>
-                  <div className="type-icon-circle blue">
-                    <Users size={24} />
-                  </div>
-                  <div className="type-info">
-                    <h4>Event Register (Attendee)</h4>
-                    <p>Discover competitions, attend hackathons, participate in workshops and get certificates.</p>
-                    <span className="type-subtext">For Students & Working Professionals</span>
-                  </div>
-                  <ArrowRight size={18} className="type-arrow" />
-                </div>
-
-                {/* Option 2: Event Host */}
-                <div className="signup-type-card" onClick={() => {
-                  setSignupSubRole('host');
-                  setSignupStep('host-form');
-                }}>
-                  <div className="type-icon-circle purple">
-                    <Building size={24} />
-                  </div>
-                  <div className="type-info">
-                    <h4>Event Host (Organizer)</h4>
-                    <p>Create and host events, manage participant capacity, schedules, and attendance rosters.</p>
-                    <span className="type-subtext">For Colleges, Companies, Clubs & Orgs</span>
-                  </div>
-                  <ArrowRight size={18} className="type-arrow" />
-                </div>
-              </div>
-            )}
-
-            {/* STEP 1.5: SELECT ATTENDEE TYPE (STUDENT vs EMPLOYEE) */}
-            {signupStep === 'select-attendee-type' && (
-              <div className="signup-select-step">
-                <button className="auth-back-btn" onClick={() => setSignupStep('select-type')}>
-                  <ArrowLeft size={16} /> Back
-                </button>
-
-                <h3>Select Registration Category</h3>
-                <p className="step-desc">Choose your participant profile category:</p>
-
-                {/* Sub-option A: Student */}
-                <div className="signup-type-card" onClick={() => {
-                  setSignupSubRole('student');
-                  setSignupStep('student-form');
-                }}>
-                  <div className="type-icon-circle green">
-                    <GraduationCap size={24} />
-                  </div>
-                  <div className="type-info">
-                    <h4>Student Registration</h4>
-                    <p>Access college hackathons, student pricing, inter-university fests & internships.</p>
-                  </div>
-                  <ArrowRight size={18} className="type-arrow" />
-                </div>
-
-                {/* Sub-option B: Employee */}
-                <div className="signup-type-card" onClick={() => {
-                  setSignupSubRole('employee');
-                  setSignupStep('employee-form');
-                }}>
-                  <div className="type-icon-circle amber">
-                    <Briefcase size={24} />
-                  </div>
-                  <div className="type-info">
-                    <h4>Employee / Professional Registration</h4>
-                    <p>Access tech conferences, system design masterclasses, executive webinars & networking.</p>
-                  </div>
-                  <ArrowRight size={18} className="type-arrow" />
-                </div>
-              </div>
-            )}
-
-            {/* STEP 2A: STUDENT FORM */}
-            {signupStep === 'student-form' && (
-              <form onSubmit={handleStudentSignup} className="auth-form scrollable-form">
-                <button type="button" className="auth-back-btn" onClick={() => setSignupStep('select-attendee-type')}>
-                  <ArrowLeft size={16} /> Back
-                </button>
-
-                <h3>Student Registration</h3>
-                <p className="step-desc">Fill in your academic details to create your participant profile.</p>
-
-                <div className="auth-field">
-                  <label>Full Name *</label>
-                  <input
-                    type="text"
-                    placeholder="e.g. Aarav Sharma"
-                    value={studentForm.name}
-                    onChange={(e) => setStudentForm({ ...studentForm, name: e.target.value })}
-                    required
-                  />
-                </div>
-
-                <div className="form-split-row">
-                  <div className="auth-field flex-1">
-                    <label>Email Address *</label>
-                    <input
-                      type="email"
-                      placeholder="e.g. aarav@college.edu"
-                      value={studentForm.email}
-                      onChange={(e) => setStudentForm({ ...studentForm, email: e.target.value })}
-                      required
-                    />
-                  </div>
-                  <div className="auth-field flex-1">
-                    <label>Phone Number *</label>
-                    <input
-                      type="tel"
-                      placeholder="+91 98765 43210"
-                      value={studentForm.phone}
-                      onChange={(e) => setStudentForm({ ...studentForm, phone: e.target.value })}
-                      required
-                    />
-                  </div>
-                </div>
-
-                <div className="auth-field">
-                  <label>College / University Name *</label>
-                  <input
-                    type="text"
-                    placeholder="e.g. IIT Delhi, BITS Pilani, NIT Trichy"
-                    value={studentForm.college}
-                    onChange={(e) => setStudentForm({ ...studentForm, college: e.target.value })}
-                    required
-                  />
-                </div>
-
-                <div className="form-split-row">
-                  <div className="auth-field flex-1">
-                    <label>Degree & Branch *</label>
-                    <input
-                      type="text"
-                      placeholder="e.g. B.Tech Computer Science"
-                      value={studentForm.degree}
-                      onChange={(e) => setStudentForm({ ...studentForm, degree: e.target.value })}
-                      required
-                    />
-                  </div>
-                  <div className="auth-field flex-1">
-                    <label>Graduation Year *</label>
-                    <select
-                      value={studentForm.gradYear}
-                      onChange={(e) => setStudentForm({ ...studentForm, gradYear: e.target.value })}
-                    >
-                      <option value="2025">2025</option>
-                      <option value="2026">2026</option>
-                      <option value="2027">2027</option>
-                      <option value="2028">2028</option>
-                      <option value="2029">2029</option>
-                    </select>
-                  </div>
-                </div>
-
-                <div className="auth-field">
-                  <label>Password *</label>
-                  <input
-                    type="password"
-                    placeholder="Create a strong password (min 6 chars)"
-                    value={studentForm.password}
-                    onChange={(e) => setStudentForm({ ...studentForm, password: e.target.value })}
-                    required
-                  />
-                </div>
-
-                <button type="submit" className="auth-submit-btn">
-                  <span>Complete Student Registration</span>
-                  <ArrowRight size={16} />
-                </button>
-              </form>
-            )}
-
-            {/* STEP 2B: EMPLOYEE FORM */}
-            {signupStep === 'employee-form' && (
-              <form onSubmit={handleEmployeeSignup} className="auth-form scrollable-form">
-                <button type="button" className="auth-back-btn" onClick={() => setSignupStep('select-attendee-type')}>
-                  <ArrowLeft size={16} /> Back
-                </button>
-
-                <h3>Employee / Professional Registration</h3>
-                <p className="step-desc">Enter your professional details to access tech masterclasses & summits.</p>
-
-                <div className="auth-field">
-                  <label>Full Name *</label>
-                  <input
-                    type="text"
-                    placeholder="e.g. Priya Patel"
-                    value={employeeForm.name}
-                    onChange={(e) => setEmployeeForm({ ...employeeForm, name: e.target.value })}
-                    required
-                  />
-                </div>
-
-                <div className="form-split-row">
-                  <div className="auth-field flex-1">
-                    <label>Company / Organization *</label>
-                    <input
-                      type="text"
-                      placeholder="e.g. Google, Microsoft, Amazon"
-                      value={employeeForm.company}
-                      onChange={(e) => setEmployeeForm({ ...employeeForm, company: e.target.value })}
-                      required
-                    />
-                  </div>
-                  <div className="auth-field flex-1">
-                    <label>Job Title / Role *</label>
-                    <input
-                      type="text"
-                      placeholder="e.g. Senior Software Engineer"
-                      value={employeeForm.jobTitle}
-                      onChange={(e) => setEmployeeForm({ ...employeeForm, jobTitle: e.target.value })}
-                      required
-                    />
-                  </div>
-                </div>
-
-                <div className="auth-field">
-                  <label>Industry / Specialization</label>
-                  <input
-                    type="text"
-                    placeholder="e.g. Cloud Computing, AI / ML, Fintech"
-                    value={employeeForm.industry}
-                    onChange={(e) => setEmployeeForm({ ...employeeForm, industry: e.target.value })}
-                  />
-                </div>
-
-                <div className="form-split-row">
-                  <div className="auth-field flex-1">
-                    <label>Work Email *</label>
-                    <input
-                      type="email"
-                      placeholder="e.g. priya@company.com"
-                      value={employeeForm.email}
-                      onChange={(e) => setEmployeeForm({ ...employeeForm, email: e.target.value })}
-                      required
-                    />
-                  </div>
-                  <div className="auth-field flex-1">
-                    <label>Phone Number *</label>
-                    <input
-                      type="tel"
-                      placeholder="+91 98765 43210"
-                      value={employeeForm.phone}
-                      onChange={(e) => setEmployeeForm({ ...employeeForm, phone: e.target.value })}
-                      required
-                    />
-                  </div>
-                </div>
-
-                <div className="auth-field">
-                  <label>Password *</label>
-                  <input
-                    type="password"
-                    placeholder="Create a strong password (min 6 chars)"
-                    value={employeeForm.password}
-                    onChange={(e) => setEmployeeForm({ ...employeeForm, password: e.target.value })}
-                    required
-                  />
-                </div>
-
-                <button type="submit" className="auth-submit-btn">
-                  <span>Complete Professional Registration</span>
-                  <ArrowRight size={16} />
-                </button>
-              </form>
-            )}
-
-            {/* STEP 2C: HOST FORM */}
-            {signupStep === 'host-form' && (
-              <form onSubmit={handleHostSignup} className="auth-form scrollable-form">
-                <button type="button" className="auth-back-btn" onClick={() => setSignupStep('select-type')}>
-                  <ArrowLeft size={16} /> Back
-                </button>
-
-                <h3>Event Host Registration</h3>
-                <p className="step-desc">Create your host portal to publish events and manage attendees.</p>
-
-                <div className="auth-field">
-                  <label>Organizer Lead Name *</label>
-                  <input
-                    type="text"
-                    placeholder="e.g. Vikramaditya Roy"
-                    value={hostForm.name}
-                    onChange={(e) => setHostForm({ ...hostForm, name: e.target.value })}
-                    required
-                  />
-                </div>
-
-                <div className="auth-field">
-                  <label>Organization / College / Community Name *</label>
-                  <input
-                    type="text"
-                    placeholder="e.g. Google Developer Group IIT Delhi / TechCorp"
-                    value={hostForm.organizationName}
-                    onChange={(e) => setHostForm({ ...hostForm, organizationName: e.target.value })}
-                    required
-                  />
-                </div>
-
-                <div className="form-split-row">
-                  <div className="auth-field flex-1">
-                    <label>Organization Type *</label>
-                    <select
-                      value={hostForm.orgType}
-                      onChange={(e) => setHostForm({ ...hostForm, orgType: e.target.value })}
-                    >
-                      <option value="University / College">University / College</option>
-                      <option value="Tech Company / Enterprise">Tech Company / Enterprise</option>
-                      <option value="Student Society / Club">Student Society / Club</option>
-                      <option value="Non-Profit / Foundation">Non-Profit / Foundation</option>
-                      <option value="Incubator / Accelerator">Incubator / Accelerator</option>
-                    </select>
-                  </div>
-                  <div className="auth-field flex-1">
-                    <label>Website or Social Link</label>
-                    <input
-                      type="url"
-                      placeholder="https://..."
-                      value={hostForm.website}
-                      onChange={(e) => setHostForm({ ...hostForm, website: e.target.value })}
-                    />
-                  </div>
-                </div>
-
-                <div className="form-split-row">
-                  <div className="auth-field flex-1">
-                    <label>Official Email ID *</label>
-                    <input
-                      type="email"
-                      placeholder="host@organization.org"
-                      value={hostForm.email}
-                      onChange={(e) => setHostForm({ ...hostForm, email: e.target.value })}
-                      required
-                    />
-                  </div>
-                  <div className="auth-field flex-1">
-                    <label>Contact Phone *</label>
-                    <input
-                      type="tel"
-                      placeholder="+91 98765 43210"
-                      value={hostForm.phone}
-                      onChange={(e) => setHostForm({ ...hostForm, phone: e.target.value })}
-                      required
-                    />
-                  </div>
-                </div>
-
-                <div className="auth-field">
-                  <label>Password *</label>
-                  <input
-                    type="password"
-                    placeholder="Create a strong password (min 6 chars)"
-                    value={hostForm.password}
-                    onChange={(e) => setHostForm({ ...hostForm, password: e.target.value })}
-                    required
-                  />
-                </div>
-
-                <button type="submit" className="auth-submit-btn">
-                  <span>Create Event Host Account</span>
-                  <ArrowRight size={16} />
-                </button>
-              </form>
-            )}
-
-            <div className="auth-footer-prompt">
-              <span>Already have an account?</span>
-              <button
-                type="button"
-                className="text-btn-link"
                 onClick={() => setAuthMode('login')}
+                className={`flex-1 py-1.5 px-3 rounded-lg text-xs font-bold transition-all ${
+                  authMode === 'login'
+                    ? 'bg-white dark:bg-slate-700 text-indigo-600 dark:text-indigo-400 shadow-xs'
+                    : 'text-slate-600 dark:text-slate-400'
+                }`}
               >
                 Sign In
               </button>
+              <button
+                onClick={() => setAuthMode('signup')}
+                className={`flex-1 py-1.5 px-3 rounded-lg text-xs font-bold transition-all ${
+                  authMode === 'signup'
+                    ? 'bg-white dark:bg-slate-700 text-indigo-600 dark:text-indigo-400 shadow-xs'
+                    : 'text-slate-600 dark:text-slate-400'
+                }`}
+              >
+                Create Account
+              </button>
             </div>
+
+            {/* VIEW 1: SIGN IN */}
+            {authMode === 'login' && (
+              <form onSubmit={handleLoginSubmit} className="space-y-4 animate-fade-in">
+                <div>
+                  <h2 className="text-xl font-bold text-slate-900 dark:text-white">
+                    Welcome back
+                  </h2>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                    Select your user role and enter your credentials.
+                  </p>
+                </div>
+
+                {/* Role Tabs */}
+                <div className="grid grid-cols-4 gap-1.5 p-1 rounded-xl bg-slate-100 dark:bg-slate-800">
+                  <button
+                    type="button"
+                    onClick={() => setLoginRole('student')}
+                    className={`py-1.5 text-xs font-semibold rounded-lg transition-all ${
+                      loginRole === 'student'
+                        ? 'bg-white dark:bg-slate-700 text-indigo-600 dark:text-indigo-400 shadow-xs'
+                        : 'text-slate-500'
+                    }`}
+                  >
+                    Student
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setLoginRole('employee')}
+                    className={`py-1.5 text-xs font-semibold rounded-lg transition-all ${
+                      loginRole === 'employee'
+                        ? 'bg-white dark:bg-slate-700 text-indigo-600 dark:text-indigo-400 shadow-xs'
+                        : 'text-slate-500'
+                    }`}
+                  >
+                    Pro
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setLoginRole('host')}
+                    className={`py-1.5 text-xs font-semibold rounded-lg transition-all ${
+                      loginRole === 'host'
+                        ? 'bg-white dark:bg-slate-700 text-indigo-600 dark:text-indigo-400 shadow-xs'
+                        : 'text-slate-500'
+                    }`}
+                  >
+                    Host
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setLoginRole('admin')}
+                    className={`py-1.5 text-xs font-semibold rounded-lg transition-all ${
+                      loginRole === 'admin'
+                        ? 'bg-white dark:bg-slate-700 text-indigo-600 dark:text-indigo-400 shadow-xs'
+                        : 'text-slate-500'
+                    }`}
+                  >
+                    Admin
+                  </button>
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                    Email Address
+                  </label>
+                  <div className="relative">
+                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
+                    <input
+                      type="email"
+                      placeholder="name@domain.com"
+                      value={loginEmail}
+                      onChange={(e) => setLoginEmail(e.target.value)}
+                      required
+                      className="input-field !pl-9"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                    Password
+                  </label>
+                  <div className="relative">
+                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
+                    <input
+                      type={showPassword ? 'text' : 'password'}
+                      placeholder="••••••••"
+                      value={loginPassword}
+                      onChange={(e) => setLoginPassword(e.target.value)}
+                      required
+                      className="input-field !pl-9 !pr-9"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                    >
+                      {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                    </button>
+                  </div>
+                </div>
+
+                <button type="submit" className="w-full btn-primary !py-2.5 mt-2">
+                  <span>Sign In</span>
+                  <ArrowRight size={15} />
+                </button>
+              </form>
+            )}
+
+            {/* VIEW 2: SIGN UP */}
+            {authMode === 'signup' && (
+              <div className="space-y-4 animate-fade-in">
+                <div>
+                  <h2 className="text-xl font-bold text-slate-900 dark:text-white">
+                    Create your account
+                  </h2>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                    Select your profile type to customize your EventHub portal.
+                  </p>
+                </div>
+
+                {/* Signup Role Selector */}
+                <div className="grid grid-cols-3 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setSignupType('student')}
+                    className={`p-2.5 rounded-xl border text-left transition-all ${
+                      signupType === 'student'
+                        ? 'border-indigo-600 bg-indigo-50/50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400'
+                        : 'border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400'
+                    }`}
+                  >
+                    <GraduationCap size={16} className="mb-1" />
+                    <div className="font-bold text-xs">Student</div>
+                    <div className="text-[10px] text-slate-400">College & Univ</div>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setSignupType('employee')}
+                    className={`p-2.5 rounded-xl border text-left transition-all ${
+                      signupType === 'employee'
+                        ? 'border-indigo-600 bg-indigo-50/50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400'
+                        : 'border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400'
+                    }`}
+                  >
+                    <Briefcase size={16} className="mb-1" />
+                    <div className="font-bold text-xs">Professional</div>
+                    <div className="text-[10px] text-slate-400">Industry Expert</div>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setSignupType('host')}
+                    className={`p-2.5 rounded-xl border text-left transition-all ${
+                      signupType === 'host'
+                        ? 'border-indigo-600 bg-indigo-50/50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400'
+                        : 'border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400'
+                    }`}
+                  >
+                    <Building size={16} className="mb-1" />
+                    <div className="font-bold text-xs">Event Host</div>
+                    <div className="text-[10px] text-slate-400">Organizer</div>
+                  </button>
+                </div>
+
+                {/* Sub-Form: Student */}
+                {signupType === 'student' && (
+                  <form onSubmit={handleStudentSignup} className="space-y-3">
+                    <div className="grid grid-cols-2 gap-2">
+                      <input
+                        type="text"
+                        placeholder="Full Name"
+                        value={studentForm.name}
+                        onChange={(e) => setStudentForm({ ...studentForm, name: e.target.value })}
+                        required
+                        className="input-field text-xs"
+                      />
+                      <input
+                        type="tel"
+                        placeholder="Phone Number"
+                        value={studentForm.phone}
+                        onChange={(e) => setStudentForm({ ...studentForm, phone: e.target.value })}
+                        required
+                        className="input-field text-xs"
+                      />
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <input
+                        type="text"
+                        placeholder="College / University"
+                        value={studentForm.college}
+                        onChange={(e) => setStudentForm({ ...studentForm, college: e.target.value })}
+                        required
+                        className="input-field text-xs"
+                      />
+                      <input
+                        type="text"
+                        placeholder="Degree (e.g. B.Tech CS)"
+                        value={studentForm.degree}
+                        onChange={(e) => setStudentForm({ ...studentForm, degree: e.target.value })}
+                        required
+                        className="input-field text-xs"
+                      />
+                    </div>
+                    <input
+                      type="email"
+                      placeholder="Student Email ID"
+                      value={studentForm.email}
+                      onChange={(e) => setStudentForm({ ...studentForm, email: e.target.value })}
+                      required
+                      className="input-field text-xs"
+                    />
+                    <input
+                      type="password"
+                      placeholder="Password"
+                      value={studentForm.password}
+                      onChange={(e) => setStudentForm({ ...studentForm, password: e.target.value })}
+                      required
+                      className="input-field text-xs"
+                    />
+                    <button type="submit" className="w-full btn-primary !py-2 text-xs">
+                      Complete Registration
+                    </button>
+                  </form>
+                )}
+
+                {/* Sub-Form: Professional */}
+                {signupType === 'employee' && (
+                  <form onSubmit={handleEmployeeSignup} className="space-y-3">
+                    <div className="grid grid-cols-2 gap-2">
+                      <input
+                        type="text"
+                        placeholder="Full Name"
+                        value={employeeForm.name}
+                        onChange={(e) => setEmployeeForm({ ...employeeForm, name: e.target.value })}
+                        required
+                        className="input-field text-xs"
+                      />
+                      <input
+                        type="tel"
+                        placeholder="Phone Number"
+                        value={employeeForm.phone}
+                        onChange={(e) => setEmployeeForm({ ...employeeForm, phone: e.target.value })}
+                        required
+                        className="input-field text-xs"
+                      />
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <input
+                        type="text"
+                        placeholder="Company / Org"
+                        value={employeeForm.company}
+                        onChange={(e) => setEmployeeForm({ ...employeeForm, company: e.target.value })}
+                        required
+                        className="input-field text-xs"
+                      />
+                      <input
+                        type="text"
+                        placeholder="Job Designation"
+                        value={employeeForm.jobTitle}
+                        onChange={(e) => setEmployeeForm({ ...employeeForm, jobTitle: e.target.value })}
+                        required
+                        className="input-field text-xs"
+                      />
+                    </div>
+                    <input
+                      type="email"
+                      placeholder="Work Email ID"
+                      value={employeeForm.email}
+                      onChange={(e) => setEmployeeForm({ ...employeeForm, email: e.target.value })}
+                      required
+                      className="input-field text-xs"
+                    />
+                    <input
+                      type="password"
+                      placeholder="Password"
+                      value={employeeForm.password}
+                      onChange={(e) => setEmployeeForm({ ...employeeForm, password: e.target.value })}
+                      required
+                      className="input-field text-xs"
+                    />
+                    <button type="submit" className="w-full btn-primary !py-2 text-xs">
+                      Join as Professional
+                    </button>
+                  </form>
+                )}
+
+                {/* Sub-Form: Host */}
+                {signupType === 'host' && (
+                  <form onSubmit={handleHostSignup} className="space-y-3">
+                    <div className="grid grid-cols-2 gap-2">
+                      <input
+                        type="text"
+                        placeholder="Contact Person Name"
+                        value={hostForm.name}
+                        onChange={(e) => setHostForm({ ...hostForm, name: e.target.value })}
+                        required
+                        className="input-field text-xs"
+                      />
+                      <input
+                        type="text"
+                        placeholder="Organization / College Name"
+                        value={hostForm.organizationName}
+                        onChange={(e) => setHostForm({ ...hostForm, organizationName: e.target.value })}
+                        required
+                        className="input-field text-xs"
+                      />
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <input
+                        type="email"
+                        placeholder="Official Host Email"
+                        value={hostForm.email}
+                        onChange={(e) => setHostForm({ ...hostForm, email: e.target.value })}
+                        required
+                        className="input-field text-xs"
+                      />
+                      <input
+                        type="tel"
+                        placeholder="Official Phone"
+                        value={hostForm.phone}
+                        onChange={(e) => setHostForm({ ...hostForm, phone: e.target.value })}
+                        required
+                        className="input-field text-xs"
+                      />
+                    </div>
+                    <input
+                      type="password"
+                      placeholder="Password"
+                      value={hostForm.password}
+                      onChange={(e) => setHostForm({ ...hostForm, password: e.target.value })}
+                      required
+                      className="input-field text-xs"
+                    />
+                    <button type="submit" className="w-full btn-primary !py-2 text-xs">
+                      Register as Event Host
+                    </button>
+                  </form>
+                )}
+              </div>
+            )}
           </div>
-        )}
-      </div>
+        </div>
+      </motion.div>
     </div>
   );
 };
+
+export default AuthModal;
+

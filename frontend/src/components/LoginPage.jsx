@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useEventHub } from '../context/EventHubContext';
+import { motion } from 'framer-motion';
 import {
   Sparkles,
   GraduationCap,
@@ -8,18 +9,12 @@ import {
   ShieldCheck,
   Mail,
   Lock,
-  Phone,
   ArrowRight,
   ArrowLeft,
-  CheckCircle2,
-  AlertCircle,
-  FileCheck,
-  Search,
-  Upload,
-  Clock,
-  ExternalLink,
   ShieldAlert,
-  Globe2
+  Eye,
+  EyeOff,
+  Compass
 } from 'lucide-react';
 
 export const LoginPage = ({ onGuestExplore }) => {
@@ -27,32 +22,26 @@ export const LoginPage = ({ onGuestExplore }) => {
     login,
     signup,
     switchDemoUser,
-    users,
     showToast
   } = useEventHub();
 
-  // Mode: 'login' | 'signup' | 'pending_notice'
-  const [authMode, setAuthMode] = useState('login');
-  
-  // Login Role Tab: 'student' | 'employee' | 'host' | 'admin'
+  const [authMode, setAuthMode] = useState('login'); // 'login' | 'signup' | 'pending_notice'
   const [loginRole, setLoginRole] = useState('student');
-  const [loginEmail, setLoginEmail] = useState('');
-  const [loginPassword, setLoginPassword] = useState('');
+  const [loginEmail, setLoginEmail] = useState('aarav@iitd.ac.in');
+  const [loginPassword, setLoginPassword] = useState('password123');
+  const [showPassword, setShowPassword] = useState(false);
   const [pendingHostData, setPendingHostData] = useState(null);
 
-  // Signup Flow State:
-  // step: 'select_type' | 'student_form' | 'employee_form' | 'host_select_type' | 'host_form'
-  const [signupStep, setSignupStep] = useState('select_type');
-  
-  // Host category: 'college' | 'company'
-  const [hostCategory, setHostCategory] = useState('college');
+  // Signup Flow
+  const [signupType, setSignupType] = useState('student'); // 'student' | 'employee' | 'host'
+  const [hostCategory] = useState('college');
 
-  // Google Search Verification State (Simulated live check)
+  // Anti-fraud Google Search Index Verification
   const [isVerifyingGoogle, setIsVerifyingGoogle] = useState(false);
   const [googleVerified, setGoogleVerified] = useState(false);
   const [googleVerifyResult, setGoogleVerifyResult] = useState('');
 
-  // Student Form State
+  // Student Form
   const [studentForm, setStudentForm] = useState({
     name: '',
     email: '',
@@ -63,7 +52,7 @@ export const LoginPage = ({ onGuestExplore }) => {
     password: ''
   });
 
-  // Employee Form State
+  // Employee Form
   const [employeeForm, setEmployeeForm] = useState({
     name: '',
     company: '',
@@ -74,7 +63,7 @@ export const LoginPage = ({ onGuestExplore }) => {
     password: ''
   });
 
-  // Host Form State (with Fraud-prevention proofs)
+  // Host Form
   const [hostForm, setHostForm] = useState({
     inchargeName: '',
     designation: '',
@@ -83,17 +72,13 @@ export const LoginPage = ({ onGuestExplore }) => {
     email: '',
     phone: '',
     website: '',
-    certificateFile: 'Accreditation-Certificate-UGC-AICTE.pdf',
-    idProofFile: 'Faculty-Director-Official-ID.pdf',
     password: ''
   });
 
-  // Quick 1-Click Demo Login handler
   const handleQuickDemoLogin = (role) => {
     switchDemoUser(role);
   };
 
-  // Google Search Index Verification Simulation
   const handleVerifyWithGoogle = (nameToVerify) => {
     if (!nameToVerify || nameToVerify.trim().length < 3) {
       showToast('Please enter an institution or company name to verify on Google.', 'warning');
@@ -112,10 +97,9 @@ export const LoginPage = ({ onGuestExplore }) => {
         setGoogleVerifyResult(`✅ Google Business Registry & MCA Corporate Index Match: "${nameToVerify}" identified as an active corporate legal entity.`);
       }
       showToast('Google Search Index & Registry verification passed!', 'success');
-    }, 1200);
+    }, 1000);
   };
 
-  // Login Submit
   const handleLoginSubmit = (e) => {
     e.preventDefault();
     if (!loginEmail || !loginPassword) {
@@ -130,7 +114,6 @@ export const LoginPage = ({ onGuestExplore }) => {
     }
   };
 
-  // Student Signup Submit
   const handleStudentSubmit = (e) => {
     e.preventDefault();
     signup({
@@ -145,7 +128,6 @@ export const LoginPage = ({ onGuestExplore }) => {
     });
   };
 
-  // Employee Signup Submit
   const handleEmployeeSubmit = (e) => {
     e.preventDefault();
     signup({
@@ -160,7 +142,6 @@ export const LoginPage = ({ onGuestExplore }) => {
     });
   };
 
-  // Host Signup Submit with Fraud Prevention
   const handleHostSubmit = (e) => {
     e.preventDefault();
 
@@ -182,8 +163,6 @@ export const LoginPage = ({ onGuestExplore }) => {
       website: hostForm.website,
       googleIndexed: true,
       googleSearchStatus: googleVerifyResult,
-      certificateProof: hostForm.certificateProof,
-      inchargeIdProof: hostForm.idProofFile,
       role: 'host',
       password: hostForm.password
     };
@@ -196,865 +175,569 @@ export const LoginPage = ({ onGuestExplore }) => {
   };
 
   return (
-    <div className="login-screen-wrapper">
-      {/* Background decoration */}
-      <div className="login-bg-glow"></div>
-      <div className="login-bg-glow-2"></div>
+    <div className="min-h-screen w-full flex items-center justify-center p-4 sm:p-6 lg:p-8 bg-mesh-glow relative overflow-hidden">
+      {/* Decorative Blur Spheres */}
+      <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-indigo-500/15 blur-[120px] rounded-full pointer-events-none" />
+      <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-purple-500/15 blur-[120px] rounded-full pointer-events-none" />
 
-      <div className="login-screen-card">
-        {/* Brand Header */}
-        <div className="login-brand-header">
-          <div className="brand-logo-center">
-            <div className="logo-icon-lg">E</div>
-            <div className="brand-title-wrap">
-              <h1 className="brand-title">Event<span>Hub</span></h1>
-              <span className="brand-tag">OPPORTUNITIES & EVENT PLATFORM</span>
-            </div>
-          </div>
-          <p className="login-subtitle">
-            Sign in to discover competitions, manage event passes, and access organizer tools.
-          </p>
-        </div>
+      <motion.div
+        initial={{ opacity: 0, scale: 0.96, y: 16 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+        className="w-full max-w-5xl bg-white dark:bg-slate-900 rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden grid grid-cols-1 lg:grid-cols-12 relative z-10"
+      >
+        {/* Left Side: Brand & Hero Showcase (5 cols) */}
+        <div className="lg:col-span-5 bg-gradient-to-br from-indigo-600 via-indigo-700 to-purple-800 p-8 sm:p-10 text-white flex flex-col justify-between relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-80 h-80 bg-white/10 rounded-full blur-3xl pointer-events-none" />
 
-        {/* ==========================================================
-            SECTION 1: QUICK DEMO ACCOUNTS (IN LOGIN PAGE ITSELF)
-        ========================================================== */}
-        <div className="demo-accounts-login-box">
-          <div className="demo-header-label">
-            <Sparkles size={15} className="text-amber-500" />
-            <span>⚡ 1-Click Demo Accounts (Select to Log In Instantly):</span>
-          </div>
-
-          <div className="demo-role-grid">
-            {/* Student Demo */}
-            <button
-              type="button"
-              className="demo-login-card student"
-              onClick={() => handleQuickDemoLogin('student')}
-              title="Log in as Student"
-            >
-              <div className="demo-icon-circle green">
-                <GraduationCap size={16} />
+          <div className="relative z-10">
+            {/* Logo */}
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 rounded-2xl bg-white text-indigo-600 font-black text-2xl flex items-center justify-center shadow-xl shadow-indigo-900/30">
+                E
               </div>
-              <div className="demo-card-text">
-                <strong>Aarav Sharma</strong>
-                <small>Student (IIT Delhi)</small>
-              </div>
-              <span className="demo-click-tag">1-Click</span>
-            </button>
-
-            {/* Professional Demo */}
-            <button
-              type="button"
-              className="demo-login-card employee"
-              onClick={() => handleQuickDemoLogin('employee')}
-              title="Log in as Working Professional"
-            >
-              <div className="demo-icon-circle blue">
-                <Briefcase size={16} />
-              </div>
-              <div className="demo-card-text">
-                <strong>Priya Patel</strong>
-                <small>Professional (Google)</small>
-              </div>
-              <span className="demo-click-tag">1-Click</span>
-            </button>
-
-            {/* Host Demo */}
-            <button
-              type="button"
-              className="demo-login-card host"
-              onClick={() => handleQuickDemoLogin('host')}
-              title="Log in as Verified Event Host"
-            >
-              <div className="demo-icon-circle purple">
-                <Building size={16} />
-              </div>
-              <div className="demo-card-text">
-                <strong>GDG & IIT Delhi</strong>
-                <small>Verified Host Council</small>
-              </div>
-              <span className="demo-click-tag">1-Click</span>
-            </button>
-
-            {/* Admin Demo */}
-            <button
-              type="button"
-              className="demo-login-card admin"
-              onClick={() => handleQuickDemoLogin('admin')}
-              title="Log in as Platform Admin"
-            >
-              <div className="demo-icon-circle red">
-                <ShieldCheck size={16} />
-              </div>
-              <div className="demo-card-text">
-                <strong>Admin Supervisor</strong>
-                <small>Platform Admin</small>
-              </div>
-              <span className="demo-click-tag">1-Click</span>
-            </button>
-          </div>
-        </div>
-
-        {/* Navigation Tabs between Login and Sign Up */}
-        {authMode !== 'pending_notice' && (
-          <div className="auth-tab-switch-row">
-            <button
-              className={`auth-switch-btn ${authMode === 'login' ? 'active' : ''}`}
-              onClick={() => {
-                setAuthMode('login');
-                setSignupStep('select_type');
-              }}
-            >
-              Sign In to Account
-            </button>
-            <button
-              className={`auth-switch-btn ${authMode === 'signup' ? 'active' : ''}`}
-              onClick={() => {
-                setAuthMode('signup');
-                setSignupStep('select_type');
-              }}
-            >
-              Create New Account (Sign Up)
-            </button>
-          </div>
-        )}
-
-        {/* ==========================================================
-            VIEW A: SIGN IN FORM
-        ========================================================== */}
-        {authMode === 'login' && (
-          <div className="login-form-wrapper">
-            {/* Role Filter Selector */}
-            <div className="login-role-selector">
-              <button
-                type="button"
-                className={`role-select-pill ${loginRole === 'student' || loginRole === 'employee' ? 'active' : ''}`}
-                onClick={() => {
-                  setLoginRole('student');
-                  setLoginEmail('aarav@iitd.ac.in');
-                  setLoginPassword('password123');
-                }}
-              >
-                <GraduationCap size={15} />
-                <span>Event Register (Student / Professional)</span>
-              </button>
-              <button
-                type="button"
-                className={`role-select-pill ${loginRole === 'host' ? 'active' : ''}`}
-                onClick={() => {
-                  setLoginRole('host');
-                  setLoginEmail('host@gdg.org');
-                  setLoginPassword('password123');
-                }}
-              >
-                <Building size={15} />
-                <span>Event Host (College / Company)</span>
-              </button>
-              <button
-                type="button"
-                className={`role-select-pill ${loginRole === 'admin' ? 'active' : ''}`}
-                onClick={() => {
-                  setLoginRole('admin');
-                  setLoginEmail('admin@eventhub.com');
-                  setLoginPassword('password123');
-                }}
-              >
-                <ShieldCheck size={15} />
-                <span>Admin Console</span>
-              </button>
-            </div>
-
-            <form onSubmit={handleLoginSubmit} className="login-actual-form">
-              <div className="form-input-field">
-                <label>Registered Email Address</label>
-                <div className="input-icon-box">
-                  <Mail size={16} className="input-icon" />
-                  <input
-                    type="email"
-                    placeholder="Enter your email"
-                    value={loginEmail}
-                    onChange={(e) => setLoginEmail(e.target.value)}
-                    required
-                  />
-                </div>
-              </div>
-
-              <div className="form-input-field">
-                <div className="label-with-forgot">
-                  <label>Password</label>
-                  <a
-                    href="#forgot"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      showToast('Password reset link sent to your registered email.');
-                    }}
-                    className="forgot-text-link"
-                  >
-                    Forgot password?
-                  </a>
-                </div>
-                <div className="input-icon-box">
-                  <Lock size={16} className="input-icon" />
-                  <input
-                    type="password"
-                    placeholder="Enter your password"
-                    value={loginPassword}
-                    onChange={(e) => setLoginPassword(e.target.value)}
-                    required
-                  />
-                </div>
-              </div>
-
-              <button type="submit" className="login-submit-button">
-                <span>Sign In & Open Dashboard</span>
-                <ArrowRight size={16} />
-              </button>
-            </form>
-
-            <div className="login-bottom-helper">
-              <span>New to EventHub?</span>
-              <button
-                type="button"
-                className="inline-link-btn"
-                onClick={() => {
-                  setAuthMode('signup');
-                  setSignupStep('select_type');
-                }}
-              >
-                Register Here
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* ==========================================================
-            VIEW B: SIGN UP FLOWS
-        ========================================================== */}
-        {authMode === 'signup' && (
-          <div className="signup-flow-wrapper">
-            {/* STEP 1: SELECT ACCOUNT TYPE (Event Register vs Event Host) */}
-            {signupStep === 'select_type' && (
-              <div className="signup-role-choice-panel">
-                <h3 className="choice-panel-title">Choose Account Type</h3>
-                <p className="choice-panel-sub">Select the account category that best fits your goals:</p>
-
-                {/* Choice 1: Event Register */}
-                <div
-                  className="role-selection-card"
-                  onClick={() => setSignupStep('select_attendee_type')}
-                >
-                  <div className="card-icon-box blue">
-                    <GraduationCap size={24} />
-                  </div>
-                  <div className="card-info-box">
-                    <h4>Event Register (Attendee / Participant)</h4>
-                    <p>For college students and working professionals. Register for hackathons, seminars, bootcamps, and cultural fests.</p>
-                    <span className="card-sub-tag">🎓 Student & 💼 Working Professional Options</span>
-                  </div>
-                  <ArrowRight size={18} className="card-arrow" />
-                </div>
-
-                {/* Choice 2: Event Host (With Anti-Fraud Verification) */}
-                <div
-                  className="role-selection-card"
-                  onClick={() => setSignupStep('host_select_type')}
-                >
-                  <div className="card-icon-box purple">
-                    <Building size={24} />
-                  </div>
-                  <div className="card-info-box">
-                    <div className="title-with-badge">
-                      <h4>Event Host (Organizer)</h4>
-                      <span className="verification-required-badge">
-                        <ShieldAlert size={12} />
-                        <span>Google Index & 24h Review Required</span>
-                      </span>
-                    </div>
-                    <p>For verified Colleges, Universities, Student Societies, and Corporate Companies. Host events, manage schedules, and track capacity.</p>
-                    <span className="card-sub-tag">Anti-Fraud Protection: Google registry & accreditation verification</span>
-                  </div>
-                  <ArrowRight size={18} className="card-arrow" />
-                </div>
-              </div>
-            )}
-
-            {/* STEP 1.5: SELECT ATTENDEE TYPE (Student vs Employee) */}
-            {signupStep === 'select_attendee_type' && (
-              <div className="signup-role-choice-panel">
-                <button
-                  type="button"
-                  className="back-step-btn"
-                  onClick={() => setSignupStep('select_type')}
-                >
-                  <ArrowLeft size={16} /> Back
-                </button>
-
-                <h3 className="choice-panel-title">Select Participant Profile</h3>
-                <p className="choice-panel-sub">Choose your participant category:</p>
-
-                <div
-                  className="role-selection-card"
-                  onClick={() => setSignupStep('student_form')}
-                >
-                  <div className="card-icon-box green">
-                    <GraduationCap size={24} />
-                  </div>
-                  <div className="card-info-box">
-                    <h4>Student Registration</h4>
-                    <p>Register with your university/college credentials to access student hackathons, team competitions, and discounts.</p>
-                  </div>
-                  <ArrowRight size={18} className="card-arrow" />
-                </div>
-
-                <div
-                  className="role-selection-card"
-                  onClick={() => setSignupStep('employee_form')}
-                >
-                  <div className="card-icon-box amber">
-                    <Briefcase size={24} />
-                  </div>
-                  <div className="card-info-box">
-                    <h4>Employee / Working Professional Registration</h4>
-                    <p>Register with your corporate background to access system design summits, tech conferences, and networking masterclasses.</p>
-                  </div>
-                  <ArrowRight size={18} className="card-arrow" />
-                </div>
-              </div>
-            )}
-
-            {/* STEP 2A: STUDENT FORM */}
-            {signupStep === 'student_form' && (
-              <form onSubmit={handleStudentSubmit} className="signup-detail-form">
-                <button
-                  type="button"
-                  className="back-step-btn"
-                  onClick={() => setSignupStep('select_attendee_type')}
-                >
-                  <ArrowLeft size={16} /> Back
-                </button>
-
-                <h3>🎓 Student Registration</h3>
-                <p className="form-sub-text">Enter your academic details to create your participant profile.</p>
-
-                <div className="form-input-field">
-                  <label>Full Student Name *</label>
-                  <input
-                    type="text"
-                    placeholder="e.g. Aarav Sharma"
-                    value={studentForm.name}
-                    onChange={(e) => setStudentForm({ ...studentForm, name: e.target.value })}
-                    required
-                  />
-                </div>
-
-                <div className="form-row-2col">
-                  <div className="form-input-field">
-                    <label>Email Address *</label>
-                    <input
-                      type="email"
-                      placeholder="e.g. aarav@college.edu"
-                      value={studentForm.email}
-                      onChange={(e) => setStudentForm({ ...studentForm, email: e.target.value })}
-                      required
-                    />
-                  </div>
-                  <div className="form-input-field">
-                    <label>Phone Number *</label>
-                    <input
-                      type="tel"
-                      placeholder="+91 98765 43210"
-                      value={studentForm.phone}
-                      onChange={(e) => setStudentForm({ ...studentForm, phone: e.target.value })}
-                      required
-                    />
-                  </div>
-                </div>
-
-                <div className="form-input-field">
-                  <label>College / University Name *</label>
-                  <input
-                    type="text"
-                    placeholder="e.g. Indian Institute of Technology Delhi (IIT Delhi)"
-                    value={studentForm.college}
-                    onChange={(e) => setStudentForm({ ...studentForm, college: e.target.value })}
-                    required
-                  />
-                </div>
-
-                <div className="form-row-2col">
-                  <div className="form-input-field">
-                    <label>Degree & Branch *</label>
-                    <input
-                      type="text"
-                      placeholder="e.g. B.Tech Computer Science"
-                      value={studentForm.degree}
-                      onChange={(e) => setStudentForm({ ...studentForm, degree: e.target.value })}
-                      required
-                    />
-                  </div>
-                  <div className="form-input-field">
-                    <label>Graduation Year *</label>
-                    <select
-                      value={studentForm.gradYear}
-                      onChange={(e) => setStudentForm({ ...studentForm, gradYear: e.target.value })}
-                    >
-                      <option value="2025">2025</option>
-                      <option value="2026">2026</option>
-                      <option value="2027">2027</option>
-                      <option value="2028">2028</option>
-                      <option value="2029">2029</option>
-                    </select>
-                  </div>
-                </div>
-
-                <div className="form-input-field">
-                  <label>Password *</label>
-                  <input
-                    type="password"
-                    placeholder="Create a strong password (min 6 characters)"
-                    value={studentForm.password}
-                    onChange={(e) => setStudentForm({ ...studentForm, password: e.target.value })}
-                    required
-                  />
-                </div>
-
-                <button type="submit" className="login-submit-button">
-                  <span>Complete Student Registration & Enter</span>
-                  <ArrowRight size={16} />
-                </button>
-              </form>
-            )}
-
-            {/* STEP 2B: EMPLOYEE FORM */}
-            {signupStep === 'employee_form' && (
-              <form onSubmit={handleEmployeeSubmit} className="signup-detail-form">
-                <button
-                  type="button"
-                  className="back-step-btn"
-                  onClick={() => setSignupStep('select_attendee_type')}
-                >
-                  <ArrowLeft size={16} /> Back
-                </button>
-
-                <h3>💼 Professional Registration</h3>
-                <p className="form-sub-text">Enter your corporate details to access masterclasses & conferences.</p>
-
-                <div className="form-input-field">
-                  <label>Full Name *</label>
-                  <input
-                    type="text"
-                    placeholder="e.g. Priya Patel"
-                    value={employeeForm.name}
-                    onChange={(e) => setEmployeeForm({ ...employeeForm, name: e.target.value })}
-                    required
-                  />
-                </div>
-
-                <div className="form-row-2col">
-                  <div className="form-input-field">
-                    <label>Company / Organization *</label>
-                    <input
-                      type="text"
-                      placeholder="e.g. Google India, Microsoft, Infosys"
-                      value={employeeForm.company}
-                      onChange={(e) => setEmployeeForm({ ...employeeForm, company: e.target.value })}
-                      required
-                    />
-                  </div>
-                  <div className="form-input-field">
-                    <label>Job Title / Role *</label>
-                    <input
-                      type="text"
-                      placeholder="e.g. Senior Software Engineer"
-                      value={employeeForm.jobTitle}
-                      onChange={(e) => setEmployeeForm({ ...employeeForm, jobTitle: e.target.value })}
-                      required
-                    />
-                  </div>
-                </div>
-
-                <div className="form-row-2col">
-                  <div className="form-input-field">
-                    <label>Work Email *</label>
-                    <input
-                      type="email"
-                      placeholder="e.g. priya@google.com"
-                      value={employeeForm.email}
-                      onChange={(e) => setEmployeeForm({ ...employeeForm, email: e.target.value })}
-                      required
-                    />
-                  </div>
-                  <div className="form-input-field">
-                    <label>Phone Number *</label>
-                    <input
-                      type="tel"
-                      placeholder="+91 98765 43210"
-                      value={employeeForm.phone}
-                      onChange={(e) => setEmployeeForm({ ...employeeForm, phone: e.target.value })}
-                      required
-                    />
-                  </div>
-                </div>
-
-                <div className="form-input-field">
-                  <label>Industry / Specialization</label>
-                  <input
-                    type="text"
-                    placeholder="e.g. Cloud Infrastructure, AI / ML, Cybersecurity"
-                    value={employeeForm.industry}
-                    onChange={(e) => setEmployeeForm({ ...employeeForm, industry: e.target.value })}
-                  />
-                </div>
-
-                <div className="form-input-field">
-                  <label>Password *</label>
-                  <input
-                    type="password"
-                    placeholder="Create a strong password"
-                    value={employeeForm.password}
-                    onChange={(e) => setEmployeeForm({ ...employeeForm, password: e.target.value })}
-                    required
-                  />
-                </div>
-
-                <button type="submit" className="login-submit-button">
-                  <span>Complete Professional Registration & Enter</span>
-                  <ArrowRight size={16} />
-                </button>
-              </form>
-            )}
-
-            {/* STEP 2C: HOST CATEGORY SELECTION (College/University vs Company) */}
-            {signupStep === 'host_select_type' && (
-              <div className="signup-role-choice-panel">
-                <button
-                  type="button"
-                  className="back-step-btn"
-                  onClick={() => setSignupStep('select_type')}
-                >
-                  <ArrowLeft size={16} /> Back
-                </button>
-
-                <h3 className="choice-panel-title">Host Category Selection</h3>
-                <p className="choice-panel-sub">
-                  Select your institutional type to initiate the Google registry and accreditation anti-fraud verification:
-                </p>
-
-                <div
-                  className="role-selection-card"
-                  onClick={() => {
-                    setHostCategory('college');
-                    setGoogleVerified(false);
-                    setGoogleVerifyResult('');
-                    setSignupStep('host_form');
-                  }}
-                >
-                  <div className="card-icon-box green">
-                    <GraduationCap size={24} />
-                  </div>
-                  <div className="card-info-box">
-                    <h4>🎓 College / University Host</h4>
-                    <p>For accredited Universities, IITs, NITs, BITS, Engineering/Medical colleges, and approved Student Councils.</p>
-                    <span className="card-sub-tag">Verification: Google Search Index + UGC/AICTE Certification + Faculty ID</span>
-                  </div>
-                  <ArrowRight size={18} className="card-arrow" />
-                </div>
-
-                <div
-                  className="role-selection-card"
-                  onClick={() => {
-                    setHostCategory('company');
-                    setGoogleVerified(false);
-                    setGoogleVerifyResult('');
-                    setSignupStep('host_form');
-                  }}
-                >
-                  <div className="card-icon-box blue">
-                    <Building size={24} />
-                  </div>
-                  <div className="card-info-box">
-                    <h4>💼 Company / Corporate Host</h4>
-                    <p>For registered Tech Enterprises, Startups, Product Companies, and Consulting Firms hosting hackathons & challenges.</p>
-                    <span className="card-sub-tag">Verification: Google Business Registry + CIN/Incorporation Certificate + Incharge ID</span>
-                  </div>
-                  <ArrowRight size={18} className="card-arrow" />
-                </div>
-              </div>
-            )}
-
-            {/* STEP 2D: HOST FORM WITH GOOGLE INDEX CHECK & PROOFS (ANTI-FRAUD) */}
-            {signupStep === 'host_form' && (
-              <form onSubmit={handleHostSubmit} className="signup-detail-form host-verification-form">
-                <button
-                  type="button"
-                  className="back-step-btn"
-                  onClick={() => setSignupStep('host_select_type')}
-                >
-                  <ArrowLeft size={16} /> Back
-                </button>
-
-                <div className="host-form-header-badge">
-                  <ShieldCheck size={16} className="text-emerald-500" />
-                  <span>
-                    {hostCategory === 'college' ? 'College / University Verification' : 'Company / Corporate Verification'}
-                  </span>
-                </div>
-
-                <h3>
-                  {hostCategory === 'college'
-                    ? '🎓 College / University Organizer Account'
-                    : '💼 Corporate / Enterprise Organizer Account'}
-                </h3>
-                <p className="form-sub-text">
-                  To prevent fake organizations, payment scams, and fake event certificates, EventHub requires Google search indexing verification and institutional ID proof.
-                </p>
-
-                {/* Institution Name */}
-                <div className="form-input-field">
-                  <label>
-                    {hostCategory === 'college' ? 'Official College / University Name *' : 'Registered Corporate Company Name *'}
-                  </label>
-                  <input
-                    type="text"
-                    placeholder={hostCategory === 'college' ? 'e.g. R.V. College of Engineering, Bengaluru' : 'e.g. InnovateTech Solutions Pvt Ltd'}
-                    value={hostForm.institutionName}
-                    onChange={(e) => {
-                      setHostForm({ ...hostForm, institutionName: e.target.value });
-                      setGoogleVerified(false);
-                    }}
-                    required
-                  />
-                </div>
-
-                {/* Google Search Index Check (Anti-Fraud requirement) */}
-                <div className="google-verify-box">
-                  <div className="google-verify-header">
-                    <div className="google-verify-title">
-                      <Search size={16} className="text-blue-500" />
-                      <strong>1. Google Search & Registry Index Verification *</strong>
-                    </div>
-                    <button
-                      type="button"
-                      className="btn-run-google-check"
-                      onClick={() => handleVerifyWithGoogle(hostForm.institutionName)}
-                      disabled={isVerifyingGoogle}
-                    >
-                      {isVerifyingGoogle ? 'Querying Google Index...' : 'Verify on Google Index'}
-                    </button>
-                  </div>
-
-                  {googleVerified ? (
-                    <div className="google-check-success">
-                      <CheckCircle2 size={16} />
-                      <span>{googleVerifyResult}</span>
-                    </div>
-                  ) : (
-                    <p className="google-check-hint">
-                      Click the button above to verify that {hostCategory === 'college' ? 'the college' : 'the company'} is listed on the public Google knowledge graph and recognized registry index.
-                    </p>
-                  )}
-                </div>
-
-                {/* Certificate Proof Upload */}
-                <div className="form-input-field">
-                  <label>
-                    {hostCategory === 'college'
-                      ? '2. College Accreditation Certificate / Dean Authorization Letter *'
-                      : '2. Certificate of Incorporation / GST Registration Certificate *'}
-                  </label>
-                  <div className="proof-upload-pill">
-                    <FileCheck size={18} className="text-emerald-500" />
-                    <span className="file-name">{hostForm.certificateProof}</span>
-                    <span className="file-status-badge">Attached</span>
-                  </div>
-                  <small className="proof-subtext">Ensures authentic establishment under UGC/AICTE or Ministry of Corporate Affairs.</small>
-                </div>
-
-                {/* Person ID Proof */}
-                <div className="form-input-field">
-                  <label>
-                    {hostCategory === 'college'
-                      ? '3. Faculty Incharge / Dean Official ID Card Proof *'
-                      : '3. Authorized Representative Govt / Work ID Proof *'}
-                  </label>
-                  <div className="proof-upload-pill">
-                    <FileCheck size={18} className="text-emerald-500" />
-                    <span className="file-name">{hostForm.idProofFile}</span>
-                    <span className="file-status-badge">Attached</span>
-                  </div>
-                  <small className="proof-subtext">Ensures the person creating events is an authorized employee/officer.</small>
-                </div>
-
-                <div className="form-row-2col">
-                  <div className="form-input-field">
-                    <label>Organizer Incharge Name *</label>
-                    <input
-                      type="text"
-                      placeholder="e.g. Dr. Ramesh Kulkarni"
-                      value={hostForm.inchargeName}
-                      onChange={(e) => setHostForm({ ...hostForm, inchargeName: e.target.value })}
-                      required
-                    />
-                  </div>
-                  <div className="form-input-field">
-                    <label>Designation / Role *</label>
-                    <input
-                      type="text"
-                      placeholder={hostCategory === 'college' ? 'e.g. Dean of Student Affairs' : 'e.g. Senior VP of Technology'}
-                      value={hostForm.designation}
-                      onChange={(e) => setHostForm({ ...hostForm, designation: e.target.value })}
-                      required
-                    />
-                  </div>
-                </div>
-
-                <div className="form-row-2col">
-                  <div className="form-input-field">
-                    <label>Official Institutional Email *</label>
-                    <input
-                      type="email"
-                      placeholder={hostCategory === 'college' ? 'dean.events@rvce.edu.in' : 'events@innovatetech.io'}
-                      value={hostForm.email}
-                      onChange={(e) => setHostForm({ ...hostForm, email: e.target.value })}
-                      required
-                    />
-                  </div>
-                  <div className="form-input-field">
-                    <label>Official Contact Phone *</label>
-                    <input
-                      type="tel"
-                      placeholder="+91 94455 66778"
-                      value={hostForm.phone}
-                      onChange={(e) => setHostForm({ ...hostForm, phone: e.target.value })}
-                      required
-                    />
-                  </div>
-                </div>
-
-                <div className="form-input-field">
-                  <label>Portal / Website URL</label>
-                  <input
-                    type="url"
-                    placeholder="https://..."
-                    value={hostForm.website}
-                    onChange={(e) => setHostForm({ ...hostForm, website: e.target.value })}
-                  />
-                </div>
-
-                <div className="form-input-field">
-                  <label>Create Password *</label>
-                  <input
-                    type="password"
-                    placeholder="Create a secure host password"
-                    value={hostForm.password}
-                    onChange={(e) => setHostForm({ ...hostForm, password: e.target.value })}
-                    required
-                  />
-                </div>
-
-                {/* 24-Hour Review Notice Banner */}
-                <div className="review-notice-callout">
-                  <Clock size={20} className="text-amber-500 flex-shrink-0" />
-                  <div>
-                    <strong>24-Hour Quality & Security Review Policy</strong>
-                    <p>
-                      Upon submission, your institution profile and attached certificates will be placed in the Admin Verification Queue. Once verified within 24 hours, you will receive an approval email notification, and can immediately host events!
-                    </p>
-                  </div>
-                </div>
-
-                <button type="submit" className="login-submit-button">
-                  <ShieldCheck size={18} />
-                  <span>Submit Application for 24-Hour Review</span>
-                </button>
-              </form>
-            )}
-          </div>
-        )}
-
-        {/* ==========================================================
-            VIEW C: 24-HOUR REVIEW CONFIRMATION NOTICE
-        ========================================================== */}
-        {authMode === 'pending_notice' && (
-          <div className="pending-review-screen">
-            <div className="pending-shield-icon">
-              <Clock size={48} />
-            </div>
-
-            <h2>Application Submitted for 24-Hour Review</h2>
-            <p className="pending-lead-text">
-              Your host registration for <strong>{pendingHostData?.organizationName || pendingHostData?.institutionName || 'your organization'}</strong> is undergoing security and anti-fraud verification.
-            </p>
-
-            <div className="pending-audit-card">
-              <div className="audit-detail-line">
-                <span>Institution:</span>
-                <strong>{pendingHostData?.organizationName || pendingHostData?.institutionName}</strong>
-              </div>
-              <div className="audit-detail-line">
-                <span>Account Category:</span>
-                <strong>{pendingHostData?.hostCategory?.toUpperCase() || 'COLLEGE'} HOST</strong>
-              </div>
-              <div className="audit-detail-line">
-                <span>Google Search Index:</span>
-                <span className="text-emerald-600 font-semibold">Verified on Global Index</span>
-              </div>
-              <div className="audit-detail-line">
-                <span>Certificates Submitted:</span>
-                <span>Accreditation Letter & Incharge ID Proof</span>
-              </div>
-              <div className="audit-detail-line">
-                <span>Status:</span>
-                <span className="pending-pill">⏳ Pending Admin 24-Hour Review</span>
+              <div>
+                <span className="text-2xl font-black tracking-tight">Event<span className="text-indigo-200">Hub</span></span>
+                <span className="block text-[10px] font-bold uppercase tracking-widest text-indigo-200">
+                  Opportunities & Events
+                </span>
               </div>
             </div>
 
-            <div className="pending-action-helper">
-              <p>
-                <strong>What happens next?</strong> Our Admin Quality Council manually verifies the institutional credentials and ID proofs to prevent fraudulent events. You will receive an official approval email notification once verified, after which you can log in and create events.
+            <div className="mt-8 space-y-3">
+              <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight leading-tight">
+                Where Talent Discovers Transformative Events.
+              </h2>
+              <p className="text-xs sm:text-sm text-indigo-100/90 leading-relaxed">
+                Connect with hackathons, developer summits, and university challenges. Instant E-Ticket passes with verified QR verification.
               </p>
             </div>
 
-            <div className="pending-buttons-row">
-              <button
-                type="button"
-                className="btn-return-login"
-                onClick={() => setAuthMode('login')}
-              >
-                Return to Login
-              </button>
+            {/* Quick Demo Accounts Box */}
+            <div className="mt-8 p-4 rounded-2xl bg-white/10 backdrop-blur-md border border-white/20 space-y-3">
+              <div className="flex items-center gap-1.5 text-xs font-bold text-amber-300">
+                <Sparkles size={15} />
+                <span>⚡ 1-Click Fast Demo Accounts:</span>
+              </div>
 
-              {/* Fast-track test helper so the user can test the admin approval flow instantly */}
-              <button
-                type="button"
-                className="btn-test-admin-approval"
-                onClick={() => {
-                  switchDemoUser('admin');
-                  showToast('Switched to Admin Console! Review pending applications in the Host Verification Queue tab.');
-                }}
-              >
-                <ShieldCheck size={16} />
-                <span>Test Flow: Open Admin Console to Verify</span>
-              </button>
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  onClick={() => handleQuickDemoLogin('student')}
+                  className="p-2 rounded-xl bg-white/15 hover:bg-white/25 text-left transition-all group"
+                >
+                  <div className="flex items-center gap-1.5 text-xs font-bold truncate">
+                    <GraduationCap size={14} className="text-emerald-300" />
+                    <span>Aarav S.</span>
+                  </div>
+                  <div className="text-[10px] text-indigo-100/80 truncate">Student (IIT Delhi)</div>
+                </button>
+
+                <button
+                  onClick={() => handleQuickDemoLogin('employee')}
+                  className="p-2 rounded-xl bg-white/15 hover:bg-white/25 text-left transition-all group"
+                >
+                  <div className="flex items-center gap-1.5 text-xs font-bold truncate">
+                    <Briefcase size={14} className="text-cyan-300" />
+                    <span>Priya P.</span>
+                  </div>
+                  <div className="text-[10px] text-indigo-100/80 truncate">Pro (Google)</div>
+                </button>
+
+                <button
+                  onClick={() => handleQuickDemoLogin('host')}
+                  className="p-2 rounded-xl bg-white/15 hover:bg-white/25 text-left transition-all group"
+                >
+                  <div className="flex items-center gap-1.5 text-xs font-bold truncate">
+                    <Building size={14} className="text-purple-300" />
+                    <span>GDG Council</span>
+                  </div>
+                  <div className="text-[10px] text-indigo-100/80 truncate">Verified Host</div>
+                </button>
+
+                <button
+                  onClick={() => handleQuickDemoLogin('admin')}
+                  className="p-2 rounded-xl bg-white/15 hover:bg-white/25 text-left transition-all group"
+                >
+                  <div className="flex items-center gap-1.5 text-xs font-bold truncate">
+                    <ShieldCheck size={14} className="text-rose-300" />
+                    <span>Super Admin</span>
+                  </div>
+                  <div className="text-[10px] text-indigo-100/80 truncate">Console</div>
+                </button>
+              </div>
             </div>
           </div>
-        )}
 
-        {/* Optional Guest browse option */}
-        {onGuestExplore && authMode !== 'pending_notice' && (
-          <div className="guest-explore-bar">
-            <span>Just looking around?</span>
+          {/* Guest Explore Link */}
+          <div className="mt-8 pt-4 border-t border-white/15 flex items-center justify-between">
+            <span className="text-xs text-indigo-100">Want to look around first?</span>
             <button
-              type="button"
-              className="guest-browse-link"
               onClick={onGuestExplore}
+              className="inline-flex items-center gap-1 text-xs font-bold text-white hover:text-amber-300 underline underline-offset-4 transition-colors"
             >
-              Browse Event Catalog as Guest →
+              <span>Explore as Guest</span>
+              <Compass size={14} />
             </button>
           </div>
-        )}
-      </div>
+        </div>
+
+        {/* Right Side: Auth Forms (7 cols) */}
+        <div className="lg:col-span-7 p-6 sm:p-10 flex flex-col justify-between">
+          <div>
+            {/* Top Switcher: Sign In vs Sign Up */}
+            {authMode !== 'pending_notice' && (
+              <div className="flex p-1 rounded-xl bg-slate-100 dark:bg-slate-800 mb-8 max-w-sm">
+                <button
+                  onClick={() => setAuthMode('login')}
+                  className={`flex-1 py-2 px-4 rounded-lg text-xs font-bold transition-all ${
+                    authMode === 'login'
+                      ? 'bg-white dark:bg-slate-700 text-indigo-600 dark:text-indigo-400 shadow-xs'
+                      : 'text-slate-600 dark:text-slate-400'
+                  }`}
+                >
+                  Sign In
+                </button>
+                <button
+                  onClick={() => setAuthMode('signup')}
+                  className={`flex-1 py-2 px-4 rounded-lg text-xs font-bold transition-all ${
+                    authMode === 'signup'
+                      ? 'bg-white dark:bg-slate-700 text-indigo-600 dark:text-indigo-400 shadow-xs'
+                      : 'text-slate-600 dark:text-slate-400'
+                  }`}
+                >
+                  Create Account
+                </button>
+              </div>
+            )}
+
+            {/* VIEW 1: SIGN IN */}
+            {authMode === 'login' && (
+              <form onSubmit={handleLoginSubmit} className="space-y-4 animate-fade-in">
+                <div>
+                  <h3 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white">
+                    Sign in to EventHub
+                  </h3>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                    Select your user role to access registrations and organizer features.
+                  </p>
+                </div>
+
+                {/* Role Filter Selector */}
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setLoginRole('student');
+                      setLoginEmail('aarav@iitd.ac.in');
+                      setLoginPassword('password123');
+                    }}
+                    className={`p-2.5 rounded-xl border text-center transition-all ${
+                      loginRole === 'student'
+                        ? 'border-indigo-600 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 font-bold'
+                        : 'border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400'
+                    }`}
+                  >
+                    <GraduationCap size={16} className="mx-auto mb-1" />
+                    <span className="text-xs">Student</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setLoginRole('employee');
+                      setLoginEmail('priya.patel@techcorp.com');
+                      setLoginPassword('password123');
+                    }}
+                    className={`p-2.5 rounded-xl border text-center transition-all ${
+                      loginRole === 'employee'
+                        ? 'border-indigo-600 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 font-bold'
+                        : 'border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400'
+                    }`}
+                  >
+                    <Briefcase size={16} className="mx-auto mb-1" />
+                    <span className="text-xs">Professional</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setLoginRole('host');
+                      setLoginEmail('host@gdg.org');
+                      setLoginPassword('password123');
+                    }}
+                    className={`p-2.5 rounded-xl border text-center transition-all ${
+                      loginRole === 'host'
+                        ? 'border-indigo-600 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 font-bold'
+                        : 'border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400'
+                    }`}
+                  >
+                    <Building size={16} className="mx-auto mb-1" />
+                    <span className="text-xs">Host / Org</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setLoginRole('admin');
+                      setLoginEmail('admin@eventhub.com');
+                      setLoginPassword('password123');
+                    }}
+                    className={`p-2.5 rounded-xl border text-center transition-all ${
+                      loginRole === 'admin'
+                        ? 'border-indigo-600 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 font-bold'
+                        : 'border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400'
+                    }`}
+                  >
+                    <ShieldCheck size={16} className="mx-auto mb-1" />
+                    <span className="text-xs">Admin</span>
+                  </button>
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                    Email Address
+                  </label>
+                  <div className="relative">
+                    <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
+                    <input
+                      type="email"
+                      placeholder="name@domain.com"
+                      value={loginEmail}
+                      onChange={(e) => setLoginEmail(e.target.value)}
+                      required
+                      className="input-field !pl-9.5"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                    Password
+                  </label>
+                  <div className="relative">
+                    <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
+                    <input
+                      type={showPassword ? 'text' : 'password'}
+                      placeholder="••••••••"
+                      value={loginPassword}
+                      onChange={(e) => setLoginPassword(e.target.value)}
+                      required
+                      className="input-field !pl-9.5 !pr-10"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                    >
+                      {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                    </button>
+                  </div>
+                </div>
+
+                <button type="submit" className="w-full btn-primary !py-3">
+                  <span>Log In to Dashboard</span>
+                  <ArrowRight size={16} />
+                </button>
+              </form>
+            )}
+
+            {/* VIEW 2: SIGN UP */}
+            {authMode === 'signup' && (
+              <div className="space-y-4 animate-fade-in">
+                <div>
+                  <h3 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white">
+                    Create New Account
+                  </h3>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                    Select your participation type to configure your workspace.
+                  </p>
+                </div>
+
+                {/* Role Tabs */}
+                <div className="grid grid-cols-3 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setSignupType('student')}
+                    className={`p-3 rounded-xl border text-left transition-all ${
+                      signupType === 'student'
+                        ? 'border-indigo-600 bg-indigo-50/50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 font-bold'
+                        : 'border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400'
+                    }`}
+                  >
+                    <GraduationCap size={18} className="mb-1" />
+                    <div className="text-xs font-bold">Student</div>
+                    <div className="text-[10px] text-slate-400">Competitions</div>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setSignupType('employee')}
+                    className={`p-3 rounded-xl border text-left transition-all ${
+                      signupType === 'employee'
+                        ? 'border-indigo-600 bg-indigo-50/50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 font-bold'
+                        : 'border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400'
+                    }`}
+                  >
+                    <Briefcase size={18} className="mb-1" />
+                    <div className="text-xs font-bold">Professional</div>
+                    <div className="text-[10px] text-slate-400">Summits & Talks</div>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setSignupType('host')}
+                    className={`p-3 rounded-xl border text-left transition-all ${
+                      signupType === 'host'
+                        ? 'border-indigo-600 bg-indigo-50/50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 font-bold'
+                        : 'border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400'
+                    }`}
+                  >
+                    <Building size={18} className="mb-1" />
+                    <div className="text-xs font-bold">Event Host</div>
+                    <div className="text-[10px] text-slate-400">Verified Org</div>
+                  </button>
+                </div>
+
+                {/* Student Signup Form */}
+                {signupType === 'student' && (
+                  <form onSubmit={handleStudentSubmit} className="space-y-3">
+                    <div className="grid grid-cols-2 gap-2">
+                      <input
+                        type="text"
+                        placeholder="Full Name"
+                        value={studentForm.name}
+                        onChange={(e) => setStudentForm({ ...studentForm, name: e.target.value })}
+                        required
+                        className="input-field"
+                      />
+                      <input
+                        type="tel"
+                        placeholder="Phone Number"
+                        value={studentForm.phone}
+                        onChange={(e) => setStudentForm({ ...studentForm, phone: e.target.value })}
+                        required
+                        className="input-field"
+                      />
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <input
+                        type="text"
+                        placeholder="College / University"
+                        value={studentForm.college}
+                        onChange={(e) => setStudentForm({ ...studentForm, college: e.target.value })}
+                        required
+                        className="input-field"
+                      />
+                      <input
+                        type="text"
+                        placeholder="Degree (e.g. B.Tech CS)"
+                        value={studentForm.degree}
+                        onChange={(e) => setStudentForm({ ...studentForm, degree: e.target.value })}
+                        required
+                        className="input-field"
+                      />
+                    </div>
+                    <input
+                      type="email"
+                      placeholder="Student Email Address"
+                      value={studentForm.email}
+                      onChange={(e) => setStudentForm({ ...studentForm, email: e.target.value })}
+                      required
+                      className="input-field"
+                    />
+                    <input
+                      type="password"
+                      placeholder="Create Password"
+                      value={studentForm.password}
+                      onChange={(e) => setStudentForm({ ...studentForm, password: e.target.value })}
+                      required
+                      className="input-field"
+                    />
+                    <button type="submit" className="w-full btn-primary !py-2.5">
+                      Register as Student
+                    </button>
+                  </form>
+                )}
+
+                {/* Professional Signup Form */}
+                {signupType === 'employee' && (
+                  <form onSubmit={handleEmployeeSubmit} className="space-y-3">
+                    <div className="grid grid-cols-2 gap-2">
+                      <input
+                        type="text"
+                        placeholder="Full Name"
+                        value={employeeForm.name}
+                        onChange={(e) => setEmployeeForm({ ...employeeForm, name: e.target.value })}
+                        required
+                        className="input-field"
+                      />
+                      <input
+                        type="tel"
+                        placeholder="Phone Number"
+                        value={employeeForm.phone}
+                        onChange={(e) => setEmployeeForm({ ...employeeForm, phone: e.target.value })}
+                        required
+                        className="input-field"
+                      />
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <input
+                        type="text"
+                        placeholder="Company Name"
+                        value={employeeForm.company}
+                        onChange={(e) => setEmployeeForm({ ...employeeForm, company: e.target.value })}
+                        required
+                        className="input-field"
+                      />
+                      <input
+                        type="text"
+                        placeholder="Job Title / Role"
+                        value={employeeForm.jobTitle}
+                        onChange={(e) => setEmployeeForm({ ...employeeForm, jobTitle: e.target.value })}
+                        required
+                        className="input-field"
+                      />
+                    </div>
+                    <input
+                      type="email"
+                      placeholder="Work Email Address"
+                      value={employeeForm.email}
+                      onChange={(e) => setEmployeeForm({ ...employeeForm, email: e.target.value })}
+                      required
+                      className="input-field"
+                    />
+                    <input
+                      type="password"
+                      placeholder="Create Password"
+                      value={employeeForm.password}
+                      onChange={(e) => setEmployeeForm({ ...employeeForm, password: e.target.value })}
+                      required
+                      className="input-field"
+                    />
+                    <button type="submit" className="w-full btn-primary !py-2.5">
+                      Register as Professional
+                    </button>
+                  </form>
+                )}
+
+                {/* Host Signup with Anti-Fraud Verification */}
+                {signupType === 'host' && (
+                  <form onSubmit={handleHostSubmit} className="space-y-3">
+                    <div className="grid grid-cols-2 gap-2">
+                      <input
+                        type="text"
+                        placeholder="In-Charge Name"
+                        value={hostForm.inchargeName}
+                        onChange={(e) => setHostForm({ ...hostForm, inchargeName: e.target.value })}
+                        required
+                        className="input-field"
+                      />
+                      <input
+                        type="text"
+                        placeholder="Designation / Title"
+                        value={hostForm.designation}
+                        onChange={(e) => setHostForm({ ...hostForm, designation: e.target.value })}
+                        required
+                        className="input-field"
+                      />
+                    </div>
+
+                    <div className="space-y-1">
+                      <label className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                        Institution / Organization Name *
+                      </label>
+                      <div className="flex gap-2">
+                        <input
+                          type="text"
+                          placeholder="e.g. IIT Delhi or Google Developers"
+                          value={hostForm.institutionName}
+                          onChange={(e) => setHostForm({ ...hostForm, institutionName: e.target.value })}
+                          required
+                          className="input-field"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => handleVerifyWithGoogle(hostForm.institutionName)}
+                          disabled={isVerifyingGoogle}
+                          className="px-3 py-2 text-xs font-bold rounded-xl bg-indigo-50 dark:bg-indigo-950/80 text-indigo-600 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-800 hover:bg-indigo-100 flex-shrink-0"
+                        >
+                          {isVerifyingGoogle ? 'Checking...' : 'Verify Registry'}
+                        </button>
+                      </div>
+                      {googleVerified && (
+                        <p className="text-[11px] text-emerald-600 dark:text-emerald-400 font-medium mt-1">
+                          {googleVerifyResult}
+                        </p>
+                      )}
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2">
+                      <input
+                        type="email"
+                        placeholder="Official Host Email"
+                        value={hostForm.email}
+                        onChange={(e) => setHostForm({ ...hostForm, email: e.target.value })}
+                        required
+                        className="input-field"
+                      />
+                      <input
+                        type="tel"
+                        placeholder="Official Phone"
+                        value={hostForm.phone}
+                        onChange={(e) => setHostForm({ ...hostForm, phone: e.target.value })}
+                        required
+                        className="input-field"
+                      />
+                    </div>
+
+                    <input
+                      type="password"
+                      placeholder="Create Secure Password"
+                      value={hostForm.password}
+                      onChange={(e) => setHostForm({ ...hostForm, password: e.target.value })}
+                      required
+                      className="input-field"
+                    />
+
+                    <button type="submit" className="w-full btn-primary !py-2.5">
+                      Submit Host Application (24h Review)
+                    </button>
+                  </form>
+                )}
+              </div>
+            )}
+
+            {/* VIEW 3: PENDING VERIFICATION NOTICE */}
+            {authMode === 'pending_notice' && (
+              <div className="space-y-4 animate-fade-in text-center py-6">
+                <div className="w-14 h-14 rounded-2xl bg-amber-500/15 text-amber-500 flex items-center justify-center mx-auto">
+                  <ShieldAlert size={32} />
+                </div>
+                <h3 className="text-xl font-bold text-slate-900 dark:text-white">
+                  Application Under 24-Hour Review
+                </h3>
+                <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 max-w-md mx-auto leading-relaxed">
+                  Your event host accreditation documents for{' '}
+                  <strong className="text-slate-800 dark:text-slate-200">
+                    "{pendingHostData?.organizationName || pendingHostData?.institutionName}"
+                  </strong>{' '}
+                  have been logged for admin verification to protect attendees against fraudulent listings.
+                </p>
+                <div className="p-3.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-xs text-slate-600 dark:text-slate-300">
+                  <span>Super Admin review queue: <strong>Estimated 24 hours</strong></span>
+                </div>
+                <button
+                  onClick={() => setAuthMode('login')}
+                  className="btn-secondary !py-2 !px-4 text-xs mx-auto"
+                >
+                  <ArrowLeft size={14} />
+                  <span>Return to Sign In</span>
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      </motion.div>
     </div>
   );
 };

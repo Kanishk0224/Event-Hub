@@ -1,288 +1,102 @@
-import React, { useState, useMemo } from 'react';
-import { useEventHub } from './context/EventHubContext';
-import { Navbar } from './components/Navbar';
-import { HeroSection } from './components/HeroSection';
-import { EventCard } from './components/EventCard';
-import { EventDetailModal } from './components/EventDetailModal';
-import { RegistrationModal } from './components/RegistrationModal';
-import { TicketPassModal } from './components/TicketPassModal';
-import { AuthModal } from './components/AuthModal';
-import { AttendeeDashboard } from './components/dashboards/AttendeeDashboard';
-import { OrganizerDashboard } from './components/dashboards/OrganizerDashboard';
-import { AdminDashboard } from './components/dashboards/AdminDashboard';
-import { Footer } from './components/Footer';
-import { LoginPage } from './components/LoginPage';
-import {
-  Sparkles,
-  Search,
-  Filter,
-  CheckCircle,
-  AlertCircle,
-  X,
-  Layers,
-  ArrowRight
-} from 'lucide-react';
-import './App.css';
+import React from 'react';
+import { Routes, Route, Navigate } from 'react-router-dom';
+import PublicLayout from './layouts/PublicLayout';
+import AppLayout from './layouts/AppLayout';
+
+// Public Pages
+import HomePage from './pages/public/HomePage';
+import DiscoverPage from './pages/public/DiscoverPage';
+import EventDetailPage from './pages/public/EventDetailPage';
+import OrganizerPublicPage from './pages/public/OrganizerPublicPage';
+import AuthPage from './pages/public/AuthPage';
+import ForgotPasswordPage from './pages/public/ForgotPasswordPage';
+import NotFoundPage from './pages/public/NotFoundPage';
+
+// Attendee Pages
+import AttendeeOverviewPage from './pages/attendee/AttendeeOverviewPage';
+import MyTicketsPage from './pages/attendee/MyTicketsPage';
+import SavedEventsPage from './pages/attendee/SavedEventsPage';
+import AttendeeCalendarPage from './pages/attendee/AttendeeCalendarPage';
+import WaitlistPage from './pages/attendee/WaitlistPage';
+import NotificationsPage from './pages/attendee/NotificationsPage';
+
+// Organizer Pages
+import OrganizerOverviewPage from './pages/organizer/OrganizerOverviewPage';
+import OrganizerEventsPage from './pages/organizer/OrganizerEventsPage';
+import CreateEventWizardPage from './pages/organizer/CreateEventWizardPage';
+import ParticipantsPage from './pages/organizer/ParticipantsPage';
+import CheckInPage from './pages/organizer/CheckInPage';
+import OrganizerAnalyticsPage from './pages/organizer/OrganizerAnalyticsPage';
+import PromoCodesPage from './pages/organizer/PromoCodesPage';
+import AnnouncementsPage from './pages/organizer/AnnouncementsPage';
+import TeamMembersPage from './pages/organizer/TeamMembersPage';
+
+// Admin Pages
+import AdminOverviewPage from './pages/admin/AdminOverviewPage';
+import AdminModerationPage from './pages/admin/AdminModerationPage';
+import AdminUsersPage from './pages/admin/AdminUsersPage';
+import AdminCategoriesPage from './pages/admin/AdminCategoriesPage';
+import AdminReportsPage from './pages/admin/AdminReportsPage';
+
+// Shared Profile & Settings
+import ProfilePage from './pages/shared/ProfilePage';
+import SettingsPage from './pages/shared/SettingsPage';
 
 export function App() {
-  const {
-    currentUser,
-    events,
-    activeTab,
-    setActiveTab,
-    authModalOpen,
-    setAuthModalOpen,
-    registerModalOpen,
-    setRegisterModalOpen,
-    ticketModalOpen,
-    setTicketModalOpen,
-    selectedTicket,
-    toastMessage
-  } = useEventHub();
-
-  // Guest view toggle
-  const [exploreAsGuest, setExploreAsGuest] = useState(false);
-
-  // Search & Filter State
-  const [searchQuery, setSearchQuery] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('all');
-  const [filterMode, setFilterMode] = useState('all'); // 'all' | 'Online' | 'In-Person'
-  const [filterPrice, setFilterPrice] = useState('all'); // 'all' | 'free' | 'paid'
-  const [selectedEventForDetail, setSelectedEventForDetail] = useState(null);
-  const [selectedEventForRegister, setSelectedEventForRegister] = useState(null);
-
-  // Filter events based on active filters
-  const filteredEvents = useMemo(() => {
-    return events.filter(evt => {
-      // Status check (only published events on explore page)
-      if (evt.status !== 'published') return false;
-
-      // Category filter
-      if (selectedCategory !== 'all' && evt.category !== selectedCategory) {
-        return false;
-      }
-
-      // Mode filter
-      if (filterMode === 'Online' && evt.mode !== 'Online' && evt.mode !== 'Hybrid') {
-        return false;
-      }
-      if (filterMode === 'In-Person' && evt.mode !== 'In-Person' && evt.mode !== 'Hybrid') {
-        return false;
-      }
-
-      // Price filter
-      if (filterPrice === 'free' && !evt.isFree) return false;
-      if (filterPrice === 'paid' && evt.isFree) return false;
-
-      // Search Query
-      if (searchQuery.trim()) {
-        const q = searchQuery.toLowerCase();
-        const matchesTitle = evt.title.toLowerCase().includes(q);
-        const matchesTagline = evt.tagline?.toLowerCase().includes(q);
-        const matchesOrganizer = evt.organizer?.name.toLowerCase().includes(q);
-        const matchesCategory = evt.categoryLabel?.toLowerCase().includes(q);
-        const matchesLocation = evt.location?.toLowerCase().includes(q);
-        return matchesTitle || matchesTagline || matchesOrganizer || matchesCategory || matchesLocation;
-      }
-
-      return true;
-    });
-  }, [events, selectedCategory, filterMode, filterPrice, searchQuery]);
-
-  const handleSelectEvent = (event) => {
-    setSelectedEventForDetail(event);
-  };
-
-  const handleRegisterClick = (event) => {
-    setSelectedEventForRegister(event);
-    setRegisterModalOpen(true);
-  };
-
-  if (!currentUser && !exploreAsGuest) {
-    return (
-      <div className="eventhub-app-root">
-        {toastMessage && (
-          <div className={`global-toast-banner ${toastMessage.type}`}>
-            {toastMessage.type === 'error' || toastMessage.type === 'warning' ? (
-              <AlertCircle size={18} />
-            ) : (
-              <CheckCircle size={18} />
-            )}
-            <span>{toastMessage.message}</span>
-          </div>
-        )}
-        <LoginPage onGuestExplore={() => setExploreAsGuest(true)} />
-      </div>
-    );
-  }
-
   return (
-    <div className="eventhub-app-root">
-      {/* Toast Notification Notification Banner */}
-      {toastMessage && (
-        <div className={`global-toast-banner ${toastMessage.type}`}>
-          {toastMessage.type === 'error' || toastMessage.type === 'warning' ? (
-            <AlertCircle size={18} />
-          ) : (
-            <CheckCircle size={18} />
-          )}
-          <span>{toastMessage.message}</span>
-        </div>
-      )}
+    <Routes>
+      {/* 1. Public Routes (PublicLayout with Top Navbar & Footer) */}
+      <Route element={<PublicLayout />}>
+        <Route path="/" element={<HomePage />} />
+        <Route path="/events" element={<DiscoverPage />} />
+        <Route path="/events/:id" element={<EventDetailPage />} />
+        <Route path="/organizers/:id" element={<OrganizerPublicPage />} />
+        <Route path="/login" element={<AuthPage />} />
+        <Route path="/register" element={<AuthPage />} />
+        <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+      </Route>
 
-      {/* Main Top Navigation Header */}
-      <Navbar onSearchChange={setSearchQuery} searchQuery={searchQuery} />
+      {/* 2. Authenticated App Routes (AppLayout with Collapsible Sidebar & Header) */}
+      <Route path="/app" element={<AppLayout />}>
+        {/* Attendee Space */}
+        <Route path="attendee/overview" element={<AttendeeOverviewPage />} />
+        <Route path="attendee/tickets" element={<MyTicketsPage />} />
+        <Route path="attendee/saved" element={<SavedEventsPage />} />
+        <Route path="attendee/calendar" element={<AttendeeCalendarPage />} />
+        <Route path="attendee/waitlist" element={<WaitlistPage />} />
+        <Route path="attendee/notifications" element={<NotificationsPage />} />
+        <Route path="attendee/profile" element={<ProfilePage />} />
+        <Route path="attendee/settings" element={<SettingsPage />} />
 
-      {/* Primary Page Content Router */}
-      <main className="main-content-flow">
-        {/* =======================================================
-            VIEW 1: EXPLORE EVENTS & CATALOG (UNSTOP HOMEPAGE)
-        ======================================================= */}
-        {activeTab === 'explore' && (
-          <div className="explore-view-wrapper">
-            {/* Unstop Hero Section with Live Stats & Categories */}
-            <HeroSection
-              selectedCategory={selectedCategory}
-              onSelectCategory={setSelectedCategory}
-              filterMode={filterMode}
-              onSelectFilterMode={setFilterMode}
-              filterPrice={filterPrice}
-              onSelectFilterPrice={setFilterPrice}
-            />
+        {/* Organizer Space */}
+        <Route path="organizer/overview" element={<OrganizerOverviewPage />} />
+        <Route path="organizer/events" element={<OrganizerEventsPage />} />
+        <Route path="organizer/create-event" element={<CreateEventWizardPage />} />
+        <Route path="organizer/participants" element={<ParticipantsPage />} />
+        <Route path="organizer/check-in" element={<CheckInPage />} />
+        <Route path="organizer/analytics" element={<OrganizerAnalyticsPage />} />
+        <Route path="organizer/promo-codes" element={<PromoCodesPage />} />
+        <Route path="organizer/announcements" element={<AnnouncementsPage />} />
+        <Route path="organizer/team" element={<TeamMembersPage />} />
+        <Route path="organizer/settings" element={<SettingsPage />} />
 
-            {/* Catalog Container */}
-            <section className="events-catalog-section">
-              <div className="catalog-header-bar">
-                <div className="catalog-title-group">
-                  <h2>
-                    Explore Opportunities & Hackathons
-                    <span className="results-count-chip">({filteredEvents.length} Available)</span>
-                  </h2>
-                  <p>Discover live hackathons, certified workshops, campus carnivals, and case challenges.</p>
-                </div>
+        {/* Admin Space */}
+        <Route path="admin/overview" element={<AdminOverviewPage />} />
+        <Route path="admin/moderation" element={<AdminModerationPage />} />
+        <Route path="admin/users" element={<AdminUsersPage />} />
+        <Route path="admin/categories" element={<AdminCategoriesPage />} />
+        <Route path="admin/reports" element={<AdminReportsPage />} />
+        <Route path="admin/settings" element={<SettingsPage />} />
 
-                {/* Filter resets if active */}
-                {(selectedCategory !== 'all' || filterMode !== 'all' || filterPrice !== 'all' || searchQuery) && (
-                  <button
-                    className="btn-reset-filters"
-                    onClick={() => {
-                      setSelectedCategory('all');
-                      setFilterMode('all');
-                      setFilterPrice('all');
-                      setSearchQuery('');
-                    }}
-                  >
-                    <X size={14} />
-                    <span>Clear All Filters</span>
-                  </button>
-                )}
-              </div>
+        {/* Root App Redirect */}
+        <Route index element={<Navigate to="/app/attendee/overview" replace />} />
+      </Route>
 
-              {/* Event Cards Grid */}
-              {filteredEvents.length === 0 ? (
-                <div className="no-events-found-box">
-                  <Search size={48} className="text-gray-400 mb-3" />
-                  <h3>No Events Match Your Filters</h3>
-                  <p>Try adjusting your search keywords, category, or event mode filters.</p>
-                  <button
-                    className="primary-action-btn"
-                    onClick={() => {
-                      setSelectedCategory('all');
-                      setFilterMode('all');
-                      setFilterPrice('all');
-                      setSearchQuery('');
-                    }}
-                  >
-                    Reset All Filters
-                  </button>
-                </div>
-              ) : (
-                <div className="events-cards-grid">
-                  {filteredEvents.map((event) => (
-                    <EventCard
-                      key={event.id}
-                      event={event}
-                      onSelectEvent={handleSelectEvent}
-                      onRegisterClick={handleRegisterClick}
-                    />
-                  ))}
-                </div>
-              )}
-            </section>
-          </div>
-        )}
-
-        {/* =======================================================
-            VIEW 2: ATTENDEE DASHBOARD (STUDENT & PROFESSIONAL)
-        ======================================================= */}
-        {activeTab === 'attendee-dashboard' && (
-          <AttendeeDashboard
-            onSelectEvent={handleSelectEvent}
-            onRegisterClick={handleRegisterClick}
-          />
-        )}
-
-        {/* =======================================================
-            VIEW 3: ORGANIZER DASHBOARD (EVENT HOST)
-        ======================================================= */}
-        {activeTab === 'organizer-dashboard' && (
-          <OrganizerDashboard onSelectEvent={handleSelectEvent} />
-        )}
-
-        {/* =======================================================
-            VIEW 4: ADMINISTRATOR CONSOLE
-        ======================================================= */}
-        {activeTab === 'admin-dashboard' && (
-          <AdminDashboard onSelectEvent={handleSelectEvent} />
-        )}
-      </main>
-
-      {/* Footer */}
-      <Footer />
-
-      {/* =======================================================
-          MODALS
-      ======================================================= */}
-
-      {/* Auth Modal (Login / Sign Up for Student, Employee, Host, Admin) */}
-      <AuthModal
-        isOpen={authModalOpen}
-        onClose={() => setAuthModalOpen(false)}
-      />
-
-      {/* Event Detail Modal (Full overview, schedule, speakers, FAQs, capacity) */}
-      {selectedEventForDetail && (
-        <EventDetailModal
-          event={selectedEventForDetail}
-          onClose={() => setSelectedEventForDetail(null)}
-          onRegisterClick={(evt) => {
-            setSelectedEventForDetail(null);
-            handleRegisterClick(evt);
-          }}
-        />
-      )}
-
-      {/* Registration Modal (Solo/Team form, auto waitlist, instant pass) */}
-      {registerModalOpen && selectedEventForRegister && (
-        <RegistrationModal
-          event={selectedEventForRegister}
-          onClose={() => {
-            setRegisterModalOpen(false);
-            setSelectedEventForRegister(null);
-          }}
-        />
-      )}
-
-      {/* Ticket Pass Modal (Digital entry badge with QR code, print, calendar) */}
-      {ticketModalOpen && selectedTicket && (
-        <TicketPassModal
-          ticket={selectedTicket}
-          onClose={() => {
-            setTicketModalOpen(false);
-          }}
-        />
-      )}
-    </div>
+      {/* 3. 404 Fallback Route */}
+      <Route element={<PublicLayout />}>
+        <Route path="*" element={<NotFoundPage />} />
+      </Route>
+    </Routes>
   );
 }
 

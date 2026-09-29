@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useEventHub } from '../context/EventHubContext';
+import { motion } from 'framer-motion';
 import {
   X,
   Calendar,
@@ -15,7 +16,6 @@ import {
   ChevronUp,
   Sparkles,
   Ticket,
-  AlertCircle,
   ExternalLink,
   ArrowRight,
   ShieldCheck,
@@ -23,9 +23,26 @@ import {
 } from 'lucide-react';
 
 export const EventDetailModal = ({ event, onClose, onRegisterClick }) => {
-  const { bookmarks, toggleBookmark, registrations, currentUser, setSelectedTicket, setTicketModalOpen, showToast } = useEventHub();
+  const {
+    bookmarks,
+    toggleBookmark,
+    registrations,
+    currentUser,
+    setSelectedTicket,
+    setTicketModalOpen,
+    showToast
+  } = useEventHub();
+
   const [activeDetailTab, setActiveDetailTab] = useState('overview'); // 'overview' | 'schedule' | 'speakers' | 'faqs'
   const [expandedFaq, setExpandedFaq] = useState(0);
+
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [onClose]);
 
   if (!event) return null;
 
@@ -37,9 +54,15 @@ export const EventDetailModal = ({ event, onClose, onRegisterClick }) => {
   const isFull = event.registeredCount >= event.maxCapacity;
   const capacityPercent = Math.min(100, Math.round((event.registeredCount / event.maxCapacity) * 100));
 
-  let progressColor = '#10b981';
-  if (capacityPercent >= 90) progressColor = '#ef4444';
-  else if (capacityPercent >= 70) progressColor = '#f59e0b';
+  let progressBg = 'bg-emerald-500';
+  let progressText = 'text-emerald-600 dark:text-emerald-400';
+  if (capacityPercent >= 90) {
+    progressBg = 'bg-rose-500';
+    progressText = 'text-rose-600 dark:text-rose-400';
+  } else if (capacityPercent >= 70) {
+    progressBg = 'bg-amber-500';
+    progressText = 'text-amber-600 dark:text-amber-400';
+  }
 
   const handleShare = () => {
     if (navigator.clipboard) {
@@ -56,373 +79,471 @@ export const EventDetailModal = ({ event, onClose, onRegisterClick }) => {
   };
 
   return (
-    <div className="modal-backdrop-overlay" onClick={onClose}>
-      <div className="event-detail-modal-container" onClick={(e) => e.stopPropagation()}>
-        {/* Close Button */}
-        <button className="modal-close-floating-btn" onClick={onClose}>
-          <X size={20} />
+    <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-950/70 backdrop-blur-md flex items-center justify-center p-3 sm:p-4 lg:p-6">
+      <motion.div
+        initial={{ opacity: 0, scale: 0.96, y: 16 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        exit={{ opacity: 0, scale: 0.96, y: 16 }}
+        transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
+        className="relative w-full max-w-5xl bg-white dark:bg-slate-900 rounded-2xl sm:rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden my-auto max-h-[92vh] flex flex-col"
+      >
+        {/* Floating Close Button */}
+        <button
+          onClick={onClose}
+          aria-label="Close modal"
+          className="absolute top-4 right-4 z-20 p-2 rounded-full bg-slate-950/60 hover:bg-slate-950 text-white backdrop-blur-md transition-colors"
+        >
+          <X size={18} />
         </button>
 
-        {/* Modal Banner Hero */}
-        <div className="modal-hero-banner">
-          <img src={event.bannerUrl} alt={event.title} className="modal-hero-img" />
-          <div className="modal-hero-gradient"></div>
+        {/* Scrollable Container */}
+        <div className="overflow-y-auto flex-1">
+          {/* Hero Banner Section */}
+          <div className="relative aspect-[21/9] sm:aspect-[24/9] w-full bg-slate-900 overflow-hidden">
+            <img
+              src={event.bannerUrl}
+              alt={event.title}
+              className="w-full h-full object-cover opacity-90"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/50 to-transparent" />
 
-          <div className="modal-hero-content">
-            <div className="modal-hero-tags">
-              <span className={`category-tag tag-${event.category}`}>
-                {event.categoryLabel || event.category}
-              </span>
-              <span className="mode-tag">
-                {event.mode === 'Online' ? '🌐 Virtual Mode' : event.mode === 'Hybrid' ? '⚡ Hybrid Mode' : '📍 Campus / Offline'}
-              </span>
-            </div>
+            <div className="absolute bottom-4 left-4 right-4 sm:bottom-6 sm:left-6 sm:right-6 text-white space-y-2">
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="px-2.5 py-1 text-xs font-bold uppercase rounded-lg bg-indigo-600/90 text-white backdrop-blur-md">
+                  {event.categoryLabel || event.category}
+                </span>
+                <span className="px-2.5 py-1 text-xs font-semibold rounded-lg bg-white/20 text-white backdrop-blur-md flex items-center gap-1">
+                  {event.mode === 'Online' ? <Globe2 size={13} /> : <MapPin size={13} />}
+                  <span>{event.mode} Mode</span>
+                </span>
+              </div>
 
-            <h1 className="modal-hero-title">{event.title}</h1>
-            <p className="modal-hero-tagline">{event.tagline}</p>
+              <h1 className="text-xl sm:text-3xl lg:text-4xl font-black tracking-tight leading-tight">
+                {event.title}
+              </h1>
+              <p className="text-xs sm:text-sm text-slate-300 line-clamp-1 max-w-3xl">
+                {event.tagline}
+              </p>
 
-            {/* Organizer bar */}
-            <div className="modal-organizer-row">
-              <img src={event.organizer.logo} alt="" className="modal-org-logo" />
-              <div>
-                <div className="modal-org-name-row">
-                  <span>Organized by <strong>{event.organizer.name}</strong></span>
-                  {event.organizer.verified && (
-                    <CheckCircle2 size={16} className="text-blue-500 verified-icon" />
-                  )}
-                </div>
-                <span className="modal-org-type">{event.organizer.type} • {event.organizer.email}</span>
+              {/* Host Tag */}
+              <div className="flex items-center gap-2 pt-1 text-xs text-slate-300">
+                <img
+                  src={event.organizer.logo}
+                  alt=""
+                  className="w-6 h-6 rounded-full object-cover ring-1 ring-white/30"
+                />
+                <span>
+                  Organized by <strong className="text-white">{event.organizer.name}</strong>
+                </span>
+                {event.organizer.verified && (
+                  <CheckCircle2 size={14} className="text-indigo-400" />
+                )}
+                <span className="text-slate-400 hidden sm:inline">• {event.organizer.type}</span>
               </div>
             </div>
           </div>
-        </div>
 
-        {/* Content Layout: 2 Columns */}
-        <div className="modal-body-layout">
-          {/* Main Left Column */}
-          <div className="modal-left-content">
-            {/* Quick Metrics Bar */}
-            <div className="modal-quick-stats-strip">
-              <div className="stat-pill">
-                <Calendar size={16} className="stat-icon" />
-                <div>
-                  <label>Date & Duration</label>
-                  <span>{new Date(event.startDate).toLocaleDateString()} - {new Date(event.endDate).toLocaleDateString()}</span>
-                </div>
-              </div>
-
-              <div className="stat-pill">
-                <MapPin size={16} className="stat-icon" />
-                <div>
-                  <label>Venue / Platform</label>
-                  <span>{event.location}</span>
-                </div>
-              </div>
-
-              <div className="stat-pill">
-                <Users size={16} className="stat-icon" />
-                <div>
-                  <label>Team Size</label>
-                  <span>{event.teamSize}</span>
-                </div>
-              </div>
-
-              <div className="stat-pill">
-                <Award size={16} className="stat-icon" />
-                <div>
-                  <label>Registration Fee</label>
-                  <span className="fee-highlight">{event.isFree ? 'FREE' : `₹${event.price}`}</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Modal Tabs Navigation */}
-            <div className="modal-nav-tabs">
-              <button
-                className={`modal-tab-btn ${activeDetailTab === 'overview' ? 'active' : ''}`}
-                onClick={() => setActiveDetailTab('overview')}
-              >
-                Overview & Perks
-              </button>
-              <button
-                className={`modal-tab-btn ${activeDetailTab === 'schedule' ? 'active' : ''}`}
-                onClick={() => setActiveDetailTab('schedule')}
-              >
-                Schedule & Agenda
-              </button>
-              {event.speakers && event.speakers.length > 0 && (
-                <button
-                  className={`modal-tab-btn ${activeDetailTab === 'speakers' ? 'active' : ''}`}
-                  onClick={() => setActiveDetailTab('speakers')}
-                >
-                  Keynote Speakers
-                </button>
-              )}
-              {event.faqs && event.faqs.length > 0 && (
-                <button
-                  className={`modal-tab-btn ${activeDetailTab === 'faqs' ? 'active' : ''}`}
-                  onClick={() => setActiveDetailTab('faqs')}
-                >
-                  FAQs
-                </button>
-              )}
-            </div>
-
-            {/* TAB 1: OVERVIEW */}
-            {activeDetailTab === 'overview' && (
-              <div className="modal-tab-panel">
-                <section className="detail-section">
-                  <h3>About the Opportunity</h3>
-                  <div className="description-text">
-                    {event.description.split('\n\n').map((paragraph, idx) => (
-                      <p key={idx}>{paragraph}</p>
-                    ))}
+          {/* Body: 2 Columns */}
+          <div className="p-4 sm:p-6 lg:p-8 grid grid-cols-1 lg:grid-cols-3 gap-8">
+            {/* Left Col: Details & Tabs (Span 2) */}
+            <div className="lg:col-span-2 space-y-6">
+              {/* Quick Metrics Strip */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-700/80">
+                  <div className="flex items-center gap-1.5 text-slate-400 text-xs font-medium mb-1">
+                    <Calendar size={14} className="text-indigo-500" />
+                    <span>Dates</span>
                   </div>
-                </section>
+                  <p className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white">
+                    {new Date(event.startDate).toLocaleDateString()}
+                  </p>
+                </div>
 
-                {/* Prizes & Rewards */}
-                {event.prizes && event.prizes.length > 0 && (
-                  <section className="detail-section prizes-section">
-                    <h3>🏆 Prizes, Rewards & Grants</h3>
-                    <div className="prizes-grid">
-                      {event.prizes.map((p, idx) => (
-                        <div key={idx} className="prize-card">
-                          <div className="prize-rank-badge">#{idx + 1} Rank</div>
-                          <h4>{p.rank}</h4>
-                          <p className="prize-amount">{p.prize}</p>
-                        </div>
+                <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-700/80">
+                  <div className="flex items-center gap-1.5 text-slate-400 text-xs font-medium mb-1">
+                    <MapPin size={14} className="text-rose-500" />
+                    <span>Venue</span>
+                  </div>
+                  <p className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white truncate">
+                    {event.location}
+                  </p>
+                </div>
+
+                <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-700/80">
+                  <div className="flex items-center gap-1.5 text-slate-400 text-xs font-medium mb-1">
+                    <Users size={14} className="text-purple-500" />
+                    <span>Team Size</span>
+                  </div>
+                  <p className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white">
+                    {event.teamSize}
+                  </p>
+                </div>
+
+                <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-700/80">
+                  <div className="flex items-center gap-1.5 text-slate-400 text-xs font-medium mb-1">
+                    <Award size={14} className="text-emerald-500" />
+                    <span>Entry Fee</span>
+                  </div>
+                  <p className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white">
+                    {event.isFree ? 'FREE' : `₹${event.price}`}
+                  </p>
+                </div>
+              </div>
+
+              {/* Navigation Tabs */}
+              <div className="flex items-center gap-2 border-b border-slate-200 dark:border-slate-800 pb-2 overflow-x-auto">
+                <button
+                  onClick={() => setActiveDetailTab('overview')}
+                  className={`px-3 py-1.5 rounded-lg text-xs sm:text-sm font-bold whitespace-nowrap transition-colors ${
+                    activeDetailTab === 'overview'
+                      ? 'bg-indigo-600 text-white shadow-xs'
+                      : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
+                  }`}
+                >
+                  Overview & Perks
+                </button>
+                <button
+                  onClick={() => setActiveDetailTab('schedule')}
+                  className={`px-3 py-1.5 rounded-lg text-xs sm:text-sm font-bold whitespace-nowrap transition-colors ${
+                    activeDetailTab === 'schedule'
+                      ? 'bg-indigo-600 text-white shadow-xs'
+                      : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
+                  }`}
+                >
+                  Agenda Timeline
+                </button>
+                {event.speakers && event.speakers.length > 0 && (
+                  <button
+                    onClick={() => setActiveDetailTab('speakers')}
+                    className={`px-3 py-1.5 rounded-lg text-xs sm:text-sm font-bold whitespace-nowrap transition-colors ${
+                      activeDetailTab === 'speakers'
+                        ? 'bg-indigo-600 text-white shadow-xs'
+                        : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
+                    }`}
+                  >
+                    Speakers ({event.speakers.length})
+                  </button>
+                )}
+                {event.faqs && event.faqs.length > 0 && (
+                  <button
+                    onClick={() => setActiveDetailTab('faqs')}
+                    className={`px-3 py-1.5 rounded-lg text-xs sm:text-sm font-bold whitespace-nowrap transition-colors ${
+                      activeDetailTab === 'faqs'
+                        ? 'bg-indigo-600 text-white shadow-xs'
+                        : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
+                    }`}
+                  >
+                    FAQs
+                  </button>
+                )}
+              </div>
+
+              {/* Tab 1: Overview */}
+              {activeDetailTab === 'overview' && (
+                <div className="space-y-6 animate-fade-in">
+                  <div className="space-y-2">
+                    <h3 className="text-base font-bold text-slate-900 dark:text-white">
+                      About the Event
+                    </h3>
+                    <div className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed space-y-2.5">
+                      {event.description.split('\n\n').map((paragraph, idx) => (
+                        <p key={idx}>{paragraph}</p>
                       ))}
                     </div>
-                  </section>
-                )}
-
-                {/* Perks & Takeaways */}
-                {event.perks && event.perks.length > 0 && (
-                  <section className="detail-section perks-section">
-                    <h3>✨ Perks & Key Takeaways</h3>
-                    <div className="perks-tags-list">
-                      {event.perks.map((perk, idx) => (
-                        <div key={idx} className="perk-tag-item">
-                          <CheckCircle2 size={16} className="text-emerald-500" />
-                          <span>{perk}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </section>
-                )}
-
-                {/* Eligibility & Guidelines */}
-                <section className="detail-section">
-                  <h3>Eligibility & Criteria</h3>
-                  <div className="eligibility-box">
-                    <div className="info-row">
-                      <strong>Who Can Apply:</strong>
-                      <span>{event.eligibility}</span>
-                    </div>
-                    <div className="info-row">
-                      <strong>Team Requirement:</strong>
-                      <span>{event.teamSize}</span>
-                    </div>
-                    <div className="info-row">
-                      <strong>Format:</strong>
-                      <span>{event.mode} ({event.location})</span>
-                    </div>
                   </div>
-                </section>
-              </div>
-            )}
 
-            {/* TAB 2: SCHEDULE */}
-            {activeDetailTab === 'schedule' && (
-              <div className="modal-tab-panel">
-                <section className="detail-section">
-                  <h3>Structured Event Agenda & Timeline</h3>
-                  <div className="schedule-timeline">
-                    {event.schedule && event.schedule.length > 0 ? (
-                      event.schedule.map((dayPlan, dayIdx) => (
-                        <div key={dayIdx} className="timeline-day-block">
-                          <div className="day-header-pill">
-                            <Calendar size={14} />
+                  {/* Prizes Grid */}
+                  {event.prizes && event.prizes.length > 0 && (
+                    <div className="space-y-3">
+                      <h3 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                        <Award size={18} className="text-amber-500" />
+                        <span>Prizes & Recognition</span>
+                      </h3>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        {event.prizes.map((p, idx) => (
+                          <div
+                            key={idx}
+                            className="p-3.5 rounded-xl bg-gradient-to-br from-amber-500/10 to-transparent border border-amber-500/20"
+                          >
+                            <span className="text-[11px] font-bold uppercase text-amber-600 dark:text-amber-400 tracking-wider">
+                              Rank #{idx + 1}
+                            </span>
+                            <h4 className="text-sm font-bold text-slate-900 dark:text-white mt-0.5">
+                              {p.rank}
+                            </h4>
+                            <p className="text-sm font-extrabold text-amber-600 dark:text-amber-400 mt-1">
+                              {p.prize}
+                            </p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Perks & Takeaways */}
+                  {event.perks && event.perks.length > 0 && (
+                    <div className="space-y-3">
+                      <h3 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                        <Sparkles size={18} className="text-indigo-500" />
+                        <span>Perks & Key Takeaways</span>
+                      </h3>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                        {event.perks.map((perk, idx) => (
+                          <div
+                            key={idx}
+                            className="flex items-center gap-2 p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 text-xs font-semibold text-slate-700 dark:text-slate-200"
+                          >
+                            <CheckCircle2 size={15} className="text-emerald-500 flex-shrink-0" />
+                            <span>{perk}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Eligibility */}
+                  <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 space-y-2">
+                    <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400">
+                      Eligibility & Participation Criteria
+                    </h3>
+                    <p className="text-xs sm:text-sm font-medium text-slate-700 dark:text-slate-300">
+                      {event.eligibility}
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {/* Tab 2: Schedule Timeline */}
+              {activeDetailTab === 'schedule' && (
+                <div className="space-y-6 animate-fade-in">
+                  <h3 className="text-base font-bold text-slate-900 dark:text-white">
+                    Event Schedule & Sessions
+                  </h3>
+                  {event.schedule && event.schedule.length > 0 ? (
+                    <div className="space-y-6">
+                      {event.schedule.map((dayPlan, dayIdx) => (
+                        <div key={dayIdx} className="space-y-3">
+                          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-indigo-50 dark:bg-indigo-950/80 text-xs font-bold text-indigo-600 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-800">
+                            <Calendar size={13} />
                             <span>{dayPlan.day}</span>
                           </div>
 
-                          <div className="sessions-list">
+                          <div className="space-y-2.5 border-l-2 border-indigo-500/30 pl-4 ml-2">
                             {dayPlan.sessions.map((sess, sessIdx) => (
-                              <div key={sessIdx} className="session-item-row">
-                                <div className="session-time-col">
-                                  <Clock size={14} />
-                                  <span>{sess.time}</span>
-                                </div>
-                                <div className="session-details-col">
-                                  <h4>{sess.title}</h4>
-                                  {sess.speaker && (
-                                    <p className="session-speaker">
-                                      👤 <strong>Lead:</strong> {sess.speaker}
-                                    </p>
-                                  )}
+                              <div
+                                key={sessIdx}
+                                className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-700/80 space-y-1"
+                              >
+                                <div className="flex items-center justify-between gap-2">
+                                  <span className="text-xs font-bold text-indigo-600 dark:text-indigo-400 flex items-center gap-1">
+                                    <Clock size={12} />
+                                    {sess.time}
+                                  </span>
                                   {sess.room && (
-                                    <span className="session-room-tag">📍 {sess.room}</span>
+                                    <span className="text-[10px] font-semibold px-2 py-0.5 rounded-md bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300">
+                                      {sess.room}
+                                    </span>
                                   )}
                                 </div>
+                                <h4 className="text-sm font-bold text-slate-900 dark:text-white">
+                                  {sess.title}
+                                </h4>
+                                {sess.speaker && (
+                                  <p className="text-xs text-slate-500 dark:text-slate-400">
+                                    Lead by <strong>{sess.speaker}</strong>
+                                  </p>
+                                )}
                               </div>
                             ))}
                           </div>
                         </div>
-                      ))
-                    ) : (
-                      <p className="no-data-text">Detailed schedule will be released shortly by the host.</p>
-                    )}
-                  </div>
-                </section>
-              </div>
-            )}
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-sm text-slate-500">Full agenda to be announced by host.</p>
+                  )}
+                </div>
+              )}
 
-            {/* TAB 3: SPEAKERS */}
-            {activeDetailTab === 'speakers' && (
-              <div className="modal-tab-panel">
-                <section className="detail-section">
-                  <h3>Distinguished Speakers & Industry Mentors</h3>
-                  <div className="speakers-grid">
+              {/* Tab 3: Speakers */}
+              {activeDetailTab === 'speakers' && (
+                <div className="space-y-4 animate-fade-in">
+                  <h3 className="text-base font-bold text-slate-900 dark:text-white">
+                    Keynote Speakers & Mentors
+                  </h3>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     {event.speakers?.map((sp, idx) => (
-                      <div key={idx} className="speaker-card">
-                        <img src={sp.avatar} alt={sp.name} className="speaker-avatar-lg" />
-                        <h4>{sp.name}</h4>
-                        <span className="speaker-role">{sp.role}</span>
-                        <span className="speaker-company">{sp.company}</span>
+                      <div
+                        key={idx}
+                        className="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 flex items-center gap-3.5"
+                      >
+                        <img
+                          src={sp.avatar}
+                          alt={sp.name}
+                          className="w-12 h-12 rounded-xl object-cover ring-2 ring-indigo-500/20"
+                        />
+                        <div className="overflow-hidden flex-1">
+                          <h4 className="text-sm font-bold text-slate-900 dark:text-white truncate">
+                            {sp.name}
+                          </h4>
+                          <p className="text-xs text-indigo-600 dark:text-indigo-400 font-medium truncate">
+                            {sp.role}
+                          </p>
+                          <p className="text-xs text-slate-500 dark:text-slate-400 truncate">
+                            {sp.company}
+                          </p>
+                        </div>
                         {sp.linkedin && (
                           <a
                             href={sp.linkedin}
                             target="_blank"
                             rel="noreferrer"
-                            className="speaker-linkedin-link"
+                            className="p-2 rounded-lg bg-indigo-50 dark:bg-indigo-950/80 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-100 transition-colors"
+                            title="LinkedIn Profile"
                           >
                             <ExternalLink size={14} />
-                            <span>Connect</span>
                           </a>
                         )}
                       </div>
                     ))}
                   </div>
-                </section>
-              </div>
-            )}
+                </div>
+              )}
 
-            {/* TAB 4: FAQS */}
-            {activeDetailTab === 'faqs' && (
-              <div className="modal-tab-panel">
-                <section className="detail-section">
-                  <h3>Frequently Asked Questions</h3>
-                  <div className="faqs-accordion">
+              {/* Tab 4: FAQs */}
+              {activeDetailTab === 'faqs' && (
+                <div className="space-y-3 animate-fade-in">
+                  <h3 className="text-base font-bold text-slate-900 dark:text-white">
+                    Frequently Asked Questions
+                  </h3>
+                  <div className="space-y-2">
                     {event.faqs?.map((faq, idx) => (
                       <div
                         key={idx}
-                        className={`faq-item ${expandedFaq === idx ? 'expanded' : ''}`}
-                        onClick={() => setExpandedFaq(expandedFaq === idx ? -1 : idx)}
+                        className="rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 overflow-hidden"
                       >
-                        <div className="faq-question-header">
+                        <button
+                          onClick={() => setExpandedFaq(expandedFaq === idx ? -1 : idx)}
+                          className="w-full p-3.5 text-left text-xs sm:text-sm font-bold text-slate-900 dark:text-white flex items-center justify-between gap-2"
+                        >
                           <span>{faq.q}</span>
-                          {expandedFaq === idx ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
-                        </div>
+                          {expandedFaq === idx ? (
+                            <ChevronUp size={16} className="text-slate-400 flex-shrink-0" />
+                          ) : (
+                            <ChevronDown size={16} className="text-slate-400 flex-shrink-0" />
+                          )}
+                        </button>
                         {expandedFaq === idx && (
-                          <div className="faq-answer-body">
-                            <p>{faq.a}</p>
+                          <div className="px-3.5 pb-3.5 pt-0 text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed border-t border-slate-200/60 dark:border-slate-700/60 pt-2.5">
+                            {faq.a}
                           </div>
                         )}
                       </div>
                     ))}
                   </div>
-                </section>
-              </div>
-            )}
-          </div>
-
-          {/* Right Sticky Action Sidebar */}
-          <div className="modal-right-sidebar">
-            <div className="sticky-action-card">
-              {/* Capacity Status */}
-              <div className="sidebar-capacity-block">
-                <div className="sidebar-cap-header">
-                  <span>Participant Capacity</span>
-                  <span className="sidebar-cap-percent" style={{ color: progressColor }}>
-                    {isFull ? 'CAPACITY FULL' : `${capacityPercent}% Filled`}
-                  </span>
                 </div>
-                <div className="capacity-track">
-                  <div
-                    className="capacity-fill"
-                    style={{ width: `${capacityPercent}%`, backgroundColor: progressColor }}
-                  ></div>
-                </div>
-                <div className="sidebar-cap-numbers">
-                  <span><strong>{event.registeredCount}</strong> Registered</span>
-                  <span>Limit: <strong>{event.maxCapacity}</strong></span>
-                </div>
-                {isFull && event.allowWaitlist && (
-                  <div className="waitlist-alert-chip">
-                    <AlertCircle size={14} />
-                    <span>Waitlist enabled ({event.waitlistCount || 0} in queue)</span>
-                  </div>
-                )}
-              </div>
-
-              {/* Deadline reminder */}
-              <div className="sidebar-deadline-box">
-                <Flame size={16} className="text-amber-500" />
-                <div>
-                  <strong>Registration Closes</strong>
-                  <p>{new Date(event.registrationDeadline).toLocaleString()}</p>
-                </div>
-              </div>
-
-              {/* CTA Button */}
-              {userRegistration ? (
-                <button className="sidebar-pass-btn" onClick={handlePassView}>
-                  <Ticket size={18} />
-                  <span>
-                    {userRegistration.status === 'waitlist'
-                      ? `Waitlisted (Queue #${userRegistration.waitlistPosition})`
-                      : 'View My E-Ticket Pass'}
-                  </span>
-                </button>
-              ) : (
-                <button
-                  className={`sidebar-register-btn ${isFull ? 'waitlist-mode' : ''}`}
-                  onClick={() => onRegisterClick(event)}
-                >
-                  <span>
-                    {isFull
-                      ? (event.allowWaitlist ? 'Join Waitlist' : 'Registrations Closed')
-                      : 'Register Now'}
-                  </span>
-                  <ArrowRight size={16} />
-                </button>
               )}
+            </div>
 
-              {/* Share & Bookmark buttons */}
-              <div className="sidebar-secondary-actions">
-                <button
-                  className={`btn-action-outline ${isBookmarked ? 'active' : ''}`}
-                  onClick={() => toggleBookmark(event.id)}
-                >
-                  <Bookmark size={16} fill={isBookmarked ? '#0073e6' : 'none'} />
-                  <span>{isBookmarked ? 'Saved' : 'Bookmark'}</span>
-                </button>
+            {/* Right Col: Sticky Sidebar CTA Card */}
+            <div className="lg:col-span-1">
+              <div className="sticky top-4 p-5 rounded-2xl bg-slate-50 dark:bg-slate-800/90 border border-slate-200 dark:border-slate-700 shadow-sm space-y-5">
+                {/* Capacity Status */}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between text-xs font-bold">
+                    <span className="text-slate-600 dark:text-slate-400">Capacity Meter</span>
+                    <span className={progressText}>
+                      {isFull ? 'CAPACITY FULL' : `${capacityPercent}% FILLED`}
+                    </span>
+                  </div>
+                  <div className="w-full h-2 rounded-full bg-slate-200 dark:bg-slate-700 overflow-hidden">
+                    <div
+                      className={`h-full ${progressBg} rounded-full transition-all duration-500`}
+                      style={{ width: `${capacityPercent}%` }}
+                    />
+                  </div>
+                  <div className="flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-400">
+                    <span><strong>{event.registeredCount}</strong> registered</span>
+                    <span>Max: <strong>{event.maxCapacity}</strong></span>
+                  </div>
+                </div>
 
-                <button className="btn-action-outline" onClick={handleShare}>
-                  <Share2 size={16} />
-                  <span>Share</span>
-                </button>
-              </div>
+                {/* Deadline Alert */}
+                <div className="flex items-center gap-2 p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-700 dark:text-amber-400 text-xs">
+                  <Flame size={16} className="flex-shrink-0 text-amber-500" />
+                  <div>
+                    <strong>Registration Closes</strong>
+                    <p className="text-[11px] text-slate-600 dark:text-slate-400">
+                      {new Date(event.registrationDeadline).toLocaleString()}
+                    </p>
+                  </div>
+                </div>
 
-              {/* Trust Badge */}
-              <div className="trust-guarantee">
-                <ShieldCheck size={16} className="text-emerald-500" />
-                <span>Verified Event by EventHub Quality Council</span>
+                {/* CTA Button */}
+                {userRegistration ? (
+                  <button
+                    onClick={handlePassView}
+                    className="w-full py-3 px-4 rounded-xl text-sm font-bold bg-indigo-600 hover:bg-indigo-700 text-white flex items-center justify-center gap-2 shadow-md shadow-indigo-500/25 transition-all"
+                  >
+                    <Ticket size={16} />
+                    <span>
+                      {userRegistration.status === 'waitlist'
+                        ? `Waitlisted (#${userRegistration.waitlistPosition})`
+                        : 'View My E-Ticket Pass'}
+                    </span>
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => onRegisterClick(event)}
+                    className={`w-full py-3 px-4 rounded-xl text-sm font-bold flex items-center justify-center gap-2 transition-all ${
+                      isFull
+                        ? event.allowWaitlist
+                          ? 'bg-amber-500 hover:bg-amber-600 text-white shadow-md shadow-amber-500/25'
+                          : 'bg-slate-200 dark:bg-slate-700 text-slate-400 cursor-not-allowed'
+                        : 'btn-primary'
+                    }`}
+                  >
+                    <span>
+                      {isFull
+                        ? (event.allowWaitlist ? 'Join Automated Waitlist' : 'Registrations Closed')
+                        : 'Register Now'}
+                    </span>
+                    <ArrowRight size={16} />
+                  </button>
+                )}
+
+                {/* Secondary Actions */}
+                <div className="grid grid-cols-2 gap-2 pt-2 border-t border-slate-200 dark:border-slate-700">
+                  <button
+                    onClick={() => toggleBookmark(event.id)}
+                    className="py-2 px-3 rounded-xl text-xs font-semibold text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-100 flex items-center justify-center gap-1.5 transition-colors"
+                  >
+                    <Bookmark
+                      size={14}
+                      className={isBookmarked ? 'fill-indigo-500 text-indigo-500' : ''}
+                    />
+                    <span>{isBookmarked ? 'Saved' : 'Bookmark'}</span>
+                  </button>
+
+                  <button
+                    onClick={handleShare}
+                    className="py-2 px-3 rounded-xl text-xs font-semibold text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-100 flex items-center justify-center gap-1.5 transition-colors"
+                  >
+                    <Share2 size={14} />
+                    <span>Share</span>
+                  </button>
+                </div>
+
+                {/* Security Guarantee */}
+                <div className="flex items-center gap-2 pt-1 text-[11px] text-slate-500 dark:text-slate-400">
+                  <ShieldCheck size={16} className="text-emerald-500 flex-shrink-0" />
+                  <span>Verified EventHub Quality Checked</span>
+                </div>
               </div>
             </div>
           </div>
         </div>
-      </div>
+      </motion.div>
     </div>
   );
 };
