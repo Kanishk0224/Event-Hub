@@ -199,6 +199,7 @@ export const LoginPage = ({ onGuestExplore }) => {
     <div className="login-screen-wrapper">
       {/* Background decoration */}
       <div className="login-bg-glow"></div>
+      <div className="login-bg-glow-2"></div>
 
       <div className="login-screen-card">
         {/* Brand Header */}
