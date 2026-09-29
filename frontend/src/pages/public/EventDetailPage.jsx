@@ -24,8 +24,6 @@ import {
 } from 'lucide-react';
 import { useEventHub } from '../../context/EventHubContext';
 import EventCard from '../../components/EventCard';
-import RegistrationModal from '../../components/RegistrationModal';
-import TicketPassModal from '../../components/TicketPassModal';
 import RatingStars from '../../components/ui/RatingStars';
 import EmptyState from '../../components/ui/EmptyState';
 
@@ -39,15 +37,15 @@ export const EventDetailPage = () => {
     bookmarks,
     toggleBookmark,
     showToast,
-    registerModalOpen,
+    openRegisterModal,
+    openTicketModal,
+    setSelectedEventForModal,
     setRegisterModalOpen,
-    ticketModalOpen,
     setTicketModalOpen,
-    selectedTicket,
     setSelectedTicket
   } = useEventHub();
 
-  const event = events.find((e) => e.id === id || e.slug === id);
+  const event = events.find((e) => e.id === id || e.slug === id || e._id === id);
 
   const [activeTab, setActiveTab] = useState('about');
   const [openFaqIndex, setOpenFaqIndex] = useState(0);
@@ -540,8 +538,12 @@ END:VCALENDAR`;
                   </div>
                   <button
                     onClick={() => {
-                      setSelectedTicket(userRegistration);
-                      setTicketModalOpen(true);
+                      if (openTicketModal) {
+                        openTicketModal(userRegistration);
+                      } else {
+                        setSelectedTicket(userRegistration);
+                        setTicketModalOpen(true);
+                      }
                     }}
                     className="w-full rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 py-3 text-xs font-bold text-white shadow-md shadow-indigo-500/25 hover:opacity-95 transition-all cursor-pointer"
                   >
@@ -550,7 +552,14 @@ END:VCALENDAR`;
                 </div>
               ) : (
                 <button
-                  onClick={() => setRegisterModalOpen(true)}
+                  onClick={() => {
+                    if (openRegisterModal) {
+                      openRegisterModal(event);
+                    } else {
+                      setSelectedEventForModal(event);
+                      setRegisterModalOpen(true);
+                    }
+                  }}
                   className={`w-full rounded-xl py-3.5 text-xs font-bold text-white shadow-lg transition-all cursor-pointer ${
                     isFull
                       ? 'bg-amber-600 hover:bg-amber-700 shadow-amber-600/30'
@@ -615,7 +624,7 @@ END:VCALENDAR`;
 
         {/* 3. Related Events Grid */}
         {relatedEvents.length > 0 && (
-          <div className="mt-16 pt-12 border-t border-slate-200 dark:border-slate-800">
+          <div className="mt-16 pt-12 border-t border-slate-200 dark:border-slate-800 pb-20 lg:pb-8">
             <h2 className="text-xl sm:text-2xl font-extrabold text-slate-900 dark:text-white mb-6">
               Similar Events You Might Like
             </h2>
@@ -633,18 +642,49 @@ END:VCALENDAR`;
         )}
       </div>
 
-      {/* Registration & Ticket Modals */}
-      <RegistrationModal
-        event={event}
-        isOpen={registerModalOpen}
-        onClose={() => setRegisterModalOpen(false)}
-      />
+      {/* Mobile Sticky Register CTA Bar (Hidden on Desktop) */}
+      <div className="lg:hidden fixed bottom-0 left-0 right-0 z-30 p-3 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-t border-slate-200 dark:border-slate-800 shadow-2xl flex items-center justify-between gap-3">
+        <div>
+          <p className="text-[10px] uppercase font-bold text-slate-400">Total Price</p>
+          <p className="text-base font-extrabold text-slate-900 dark:text-white">
+            {event.isFree ? 'Free Admission' : `₹${finalPrice}`}
+          </p>
+        </div>
 
-      <TicketPassModal
-        registration={selectedTicket}
-        isOpen={ticketModalOpen}
-        onClose={() => setTicketModalOpen(false)}
-      />
+        <div className="flex items-center gap-2">
+          {userRegistration ? (
+            <button
+              onClick={() => {
+                if (openTicketModal) {
+                  openTicketModal(userRegistration);
+                } else {
+                  setSelectedTicket(userRegistration);
+                  setTicketModalOpen(true);
+                }
+              }}
+              className="py-2.5 px-4 rounded-xl text-xs font-bold bg-indigo-600 text-white flex items-center gap-1.5 shadow-md shadow-indigo-500/25"
+            >
+              <Ticket className="h-4 w-4" />
+              <span>Digital Pass</span>
+            </button>
+          ) : (
+            <button
+              onClick={handleRegisterClick}
+              disabled={isFull && !event.allowWaitlist}
+              className={`py-2.5 px-5 rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-md ${
+                isFull
+                  ? event.allowWaitlist
+                    ? 'bg-amber-500 hover:bg-amber-600 text-white'
+                    : 'bg-slate-300 dark:bg-slate-800 text-slate-500'
+                  : 'btn-primary'
+              }`}
+            >
+              <span>{isFull ? (event.allowWaitlist ? 'Join Waitlist' : 'Sold Out') : 'Register Now'}</span>
+              <ArrowRight className="h-4 w-4" />
+            </button>
+          )}
+        </div>
+      </div>
     </div>
   );
 };

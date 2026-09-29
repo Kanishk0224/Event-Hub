@@ -22,7 +22,7 @@ import {
   Flame
 } from 'lucide-react';
 
-export const EventDetailModal = ({ event, onClose, onRegisterClick }) => {
+export const EventDetailModal = ({ event, isOpen, onClose, onRegisterClick }) => {
   const {
     bookmarks,
     toggleBookmark,
@@ -38,21 +38,25 @@ export const EventDetailModal = ({ event, onClose, onRegisterClick }) => {
 
   useEffect(() => {
     const handleKeyDown = (e) => {
-      if (e.key === 'Escape') onClose();
+      if (e.key === 'Escape' && onClose) onClose();
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [onClose]);
 
+  if (isOpen !== undefined && !isOpen) return null;
   if (!event) return null;
 
-  const isBookmarked = bookmarks.includes(event.id);
+  const eventId = event.id || event._id || event.slug;
+  const isBookmarked = bookmarks.includes(eventId);
   const userRegistration = registrations.find(
-    r => r.eventId === event.id && currentUser && r.userId === currentUser.id && r.status !== 'cancelled'
+    r => (r.eventId === eventId || r.eventId === event.id) && currentUser && r.userId === currentUser.id && r.status !== 'cancelled'
   );
 
-  const isFull = event.registeredCount >= event.maxCapacity;
-  const capacityPercent = Math.min(100, Math.round((event.registeredCount / event.maxCapacity) * 100));
+  const registeredCount = event.registeredCount || 0;
+  const maxCapacity = event.maxCapacity || 100;
+  const isFull = registeredCount >= maxCapacity;
+  const capacityPercent = Math.min(100, Math.round((registeredCount / maxCapacity) * 100));
 
   let progressBg = 'bg-emerald-500';
   let progressText = 'text-emerald-600 dark:text-emerald-400';
@@ -246,7 +250,7 @@ export const EventDetailModal = ({ event, onClose, onRegisterClick }) => {
                       About the Event
                     </h3>
                     <div className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed space-y-2.5">
-                      {event.description.split('\n\n').map((paragraph, idx) => (
+                      {(event.description || event.tagline || 'Join us for this premier technology gathering.').split('\n\n').map((paragraph, idx) => (
                         <p key={idx}>{paragraph}</p>
                       ))}
                     </div>
@@ -547,3 +551,5 @@ export const EventDetailModal = ({ event, onClose, onRegisterClick }) => {
     </div>
   );
 };
+
+export default EventDetailModal;

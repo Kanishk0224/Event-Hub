@@ -15,7 +15,6 @@ import { useEventHub } from '../../context/EventHubContext';
 import PageHeader from '../../components/ui/PageHeader';
 import EmptyState from '../../components/ui/EmptyState';
 import ConfirmDialog from '../../components/ui/ConfirmDialog';
-import TicketPassModal from '../../components/TicketPassModal';
 
 export const MyTicketsPage = () => {
   const {
@@ -151,12 +150,6 @@ export const MyTicketsPage = () => {
         message="Are you sure you want to release your confirmed slot? If this event has a waitlist, your seat will be automatically awarded to the next participant."
         confirmText="Yes, Cancel My Pass"
         isDanger={true}
-      />
-
-      <TicketPassModal
-        registration={selectedTicket}
-        isOpen={ticketModalOpen}
-        onClose={() => setTicketModalOpen(false)}
       />
     </div>
   );

@@ -31,11 +31,30 @@ import {
 import { useEventHub } from '../context/EventHubContext';
 import ThemeToggle from '../components/ui/ThemeToggle';
 import CommandPalette from '../components/ui/CommandPalette';
+import BackendStatusIndicator from '../components/ui/BackendStatusIndicator';
 import { motion, AnimatePresence } from 'framer-motion';
 import { CheckCircle, AlertCircle, Info } from 'lucide-react';
+import TicketPassModal from '../components/TicketPassModal';
+import RegistrationModal from '../components/RegistrationModal';
+import EventDetailModal from '../components/EventDetailModal';
 
 export const AppLayout = () => {
-  const { currentUser, logout, notifications, toastMessage, switchDemoUser } = useEventHub();
+  const {
+    currentUser,
+    logout,
+    notifications,
+    toastMessage,
+    switchDemoUser,
+    ticketModalOpen,
+    setTicketModalOpen,
+    selectedTicket,
+    registerModalOpen,
+    setRegisterModalOpen,
+    selectedEventForModal,
+    setSelectedEventForModal,
+    eventDetailModalOpen,
+    setEventDetailModalOpen
+  } = useEventHub();
   const [collapsed, setCollapsed] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
@@ -284,6 +303,9 @@ export const AppLayout = () => {
               </button>
             </div>
 
+            {/* Backend API Health Status Indicator */}
+            <BackendStatusIndicator />
+
             <ThemeToggle />
 
             {/* Notification Bell */}
@@ -385,6 +407,33 @@ export const AppLayout = () => {
       <CommandPalette
         isOpen={commandPaletteOpen}
         onClose={() => setCommandPaletteOpen(false)}
+      />
+
+      {/* Global Live QR Admission Ticket Pass Modal */}
+      <TicketPassModal
+        registration={selectedTicket}
+        ticket={selectedTicket}
+        isOpen={ticketModalOpen}
+        onClose={() => setTicketModalOpen(false)}
+      />
+
+      {/* Global Event Registration Modal */}
+      <RegistrationModal
+        event={selectedEventForModal}
+        isOpen={registerModalOpen}
+        onClose={() => setRegisterModalOpen(false)}
+      />
+
+      {/* Global Quick Event Details Modal */}
+      <EventDetailModal
+        event={selectedEventForModal}
+        isOpen={eventDetailModalOpen}
+        onClose={() => setEventDetailModalOpen(false)}
+        onRegisterClick={(evt) => {
+          setEventDetailModalOpen(false);
+          setSelectedEventForModal(evt);
+          setRegisterModalOpen(true);
+        }}
       />
 
       {/* Toast Notifications */}

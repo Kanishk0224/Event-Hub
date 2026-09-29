@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useEventHub } from '../context/EventHubContext';
 import { motion } from 'framer-motion';
 import {
@@ -13,7 +14,8 @@ import {
   Loader2
 } from 'lucide-react';
 
-export const RegistrationModal = ({ event, onClose }) => {
+export const RegistrationModal = ({ event, isOpen, onClose }) => {
+  const navigate = useNavigate();
   const { currentUser, registerForEvent, setAuthModalOpen, setAuthMode, showToast } = useEventHub();
 
   const [isTeam, setIsTeam] = useState(false);
@@ -31,15 +33,16 @@ export const RegistrationModal = ({ event, onClose }) => {
 
   useEffect(() => {
     const handleKeyDown = (e) => {
-      if (e.key === 'Escape') onClose();
+      if (e.key === 'Escape' && onClose) onClose();
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [onClose]);
 
+  if (isOpen !== undefined && !isOpen) return null;
   if (!event) return null;
 
-  const isFull = event.registeredCount >= event.maxCapacity;
+  const isFull = (event.registeredCount || 0) >= (event.maxCapacity || 100);
 
   const handleAddTeammate = () => {
     if (teamMembers.length < 4) {
@@ -63,13 +66,14 @@ export const RegistrationModal = ({ event, onClose }) => {
     e.preventDefault();
 
     if (!currentUser) {
-      setAuthMode('login');
-      setAuthModalOpen(true);
+      if (onClose) onClose();
+      navigate('/login');
+      showToast('Please sign in or create an account to claim your pass.', 'info');
       return;
     }
 
     if (!agreedTerms) {
-      showToast('Please accept the event code of conduct to proceed.', 'error');
+      showToast('Please accept the event guidelines to proceed.', 'error');
       return;
     }
 
@@ -93,20 +97,21 @@ export const RegistrationModal = ({ event, onClose }) => {
         notes
       });
       setIsSubmitting(false);
-    }, 500);
+      if (onClose) onClose();
+    }, 400);
   };
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-950/70 backdrop-blur-md flex items-center justify-center p-3 sm:p-4">
+    <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-950/75 backdrop-blur-md flex items-center justify-center p-3 sm:p-4">
       <motion.div
         initial={{ opacity: 0, scale: 0.96, y: 16 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.96, y: 16 }}
         transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
-        className="relative w-full max-w-xl bg-white dark:bg-slate-900 rounded-2xl sm:rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden my-auto"
+        className="relative w-full max-w-xl max-h-[92vh] flex flex-col bg-white dark:bg-slate-900 rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden my-auto"
       >
         {/* Header */}
-        <div className="p-5 sm:p-6 bg-slate-50 dark:bg-slate-800/60 border-b border-slate-200 dark:border-slate-800 flex items-start justify-between gap-4">
+        <div className="p-4 sm:p-6 bg-slate-50 dark:bg-slate-800/60 border-b border-slate-200 dark:border-slate-800 flex items-start justify-between gap-4 shrink-0">
           <div>
             <span className="px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-wider rounded-md bg-indigo-50 dark:bg-indigo-950/80 text-indigo-600 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-800">
               {event.categoryLabel || event.category}
@@ -120,246 +125,175 @@ export const RegistrationModal = ({ event, onClose }) => {
           </div>
           <button
             onClick={onClose}
-            aria-label="Close modal"
-            className="p-1.5 rounded-full hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition-colors"
+            className="p-2 rounded-xl text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
           >
             <X size={18} />
           </button>
         </div>
 
-        {/* Capacity Alert Banner */}
-        <div className="px-5 sm:px-6 pt-4">
-          {isFull ? (
-            <div className="flex items-center gap-3 p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-700 dark:text-amber-400 text-xs">
-              <AlertCircle size={18} className="flex-shrink-0" />
-              <div>
-                <strong>Event Capacity Full!</strong>
-                <p className="text-[11px] text-slate-600 dark:text-slate-400">
-                  You are joining the automated waitlist (Position #{(event.waitlistCount || 0) + 1}). You will be automatically enrolled if a slot opens.
-                </p>
-              </div>
-            </div>
-          ) : (
-            <div className="flex items-center gap-3 p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-700 dark:text-emerald-400 text-xs">
-              <CheckCircle2 size={18} className="flex-shrink-0" />
-              <div>
-                <strong>Guaranteed Immediate Admission!</strong>
-                <p className="text-[11px] text-slate-600 dark:text-slate-400">
-                  Instant QR entry ticket generated upon completion.
-                </p>
+        {/* Form Body */}
+        <form onSubmit={handleSubmit} className="p-4 sm:p-6 space-y-5 overflow-y-auto flex-1">
+          {/* Capacity Alert */}
+          {isFull && (
+            <div className="p-3.5 rounded-2xl bg-amber-50 dark:bg-amber-950/50 border border-amber-200 dark:border-amber-800/80 flex items-start gap-3">
+              <AlertCircle size={18} className="text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
+              <div className="text-xs text-amber-800 dark:text-amber-300 leading-relaxed">
+                <strong>Event is at Max Capacity ({event.maxCapacity} seats).</strong> Submitting this form will place you on the live waitlist queue. If a confirmed attendee drops, you will be automatically promoted!
               </div>
             </div>
           )}
-        </div>
-
-        {/* Form Body */}
-        <form onSubmit={handleSubmit} className="p-5 sm:p-6 space-y-4 max-h-[70vh] overflow-y-auto">
-          {/* User Confirmation Card */}
-          <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-800 flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <img
-                src={currentUser?.avatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=120'}
-                alt=""
-                className="w-10 h-10 rounded-xl object-cover ring-2 ring-indigo-500/20"
-              />
-              <div className="overflow-hidden">
-                <h4 className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white truncate">
-                  {currentUser?.name || 'Guest User'}
-                </h4>
-                <p className="text-xs text-slate-500 dark:text-slate-400 truncate">
-                  {currentUser?.email || 'Please sign in to register'}
-                </p>
-              </div>
-            </div>
-            <span className="px-2 py-0.5 text-[10px] font-bold uppercase rounded-md bg-indigo-50 dark:bg-indigo-950 text-indigo-600 dark:text-indigo-400">
-              {currentUser?.role || 'GUEST'}
-            </span>
-          </div>
 
           {/* Solo vs Team Toggle */}
-          <div className="space-y-1.5">
-            <label className="text-xs font-bold text-slate-700 dark:text-slate-300">
-              Registration Type
+          <div className="space-y-2">
+            <label className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
+              Participation Type
             </label>
-            <div className="grid grid-cols-2 gap-2 p-1 rounded-xl bg-slate-100 dark:bg-slate-800/80">
+            <div className="grid grid-cols-2 gap-2">
               <button
                 type="button"
                 onClick={() => setIsTeam(false)}
-                className={`py-2 px-3 rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 transition-all ${
+                className={`py-2.5 px-3 rounded-xl text-xs font-bold flex items-center justify-center gap-2 border transition-all cursor-pointer ${
                   !isTeam
-                    ? 'bg-white dark:bg-slate-700 text-indigo-600 dark:text-indigo-400 shadow-xs'
-                    : 'text-slate-600 dark:text-slate-400'
+                    ? 'bg-indigo-50 dark:bg-indigo-950/80 border-indigo-300 dark:border-indigo-700 text-indigo-600 dark:text-indigo-400 shadow-xs'
+                    : 'bg-slate-50 dark:bg-slate-800/50 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400'
                 }`}
               >
-                <User size={14} />
-                <span>Solo Participant</span>
+                <User size={15} />
+                <span>Individual / Solo</span>
               </button>
               <button
                 type="button"
                 onClick={() => setIsTeam(true)}
-                className={`py-2 px-3 rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 transition-all ${
+                className={`py-2.5 px-3 rounded-xl text-xs font-bold flex items-center justify-center gap-2 border transition-all cursor-pointer ${
                   isTeam
-                    ? 'bg-white dark:bg-slate-700 text-indigo-600 dark:text-indigo-400 shadow-xs'
-                    : 'text-slate-600 dark:text-slate-400'
+                    ? 'bg-indigo-50 dark:bg-indigo-950/80 border-indigo-300 dark:border-indigo-700 text-indigo-600 dark:text-indigo-400 shadow-xs'
+                    : 'bg-slate-50 dark:bg-slate-800/50 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400'
                 }`}
               >
-                <Users size={14} />
-                <span>Team Roster</span>
+                <Users size={15} />
+                <span>Team Entry (1 - 4)</span>
               </button>
             </div>
           </div>
 
           {/* Team Fields */}
           {isTeam && (
-            <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-800 space-y-3 animate-fade-in">
-              <div className="space-y-1">
-                <label className="text-xs font-bold text-slate-700 dark:text-slate-300">
+            <div className="p-4 rounded-2xl bg-indigo-50/40 dark:bg-indigo-950/20 border border-indigo-100 dark:border-indigo-900/40 space-y-3">
+              <div>
+                <label className="text-xs font-bold text-slate-800 dark:text-slate-200 mb-1 block">
                   Team Name *
                 </label>
                 <input
                   type="text"
-                  placeholder="e.g. ApexInnovators, CyberSquad"
+                  placeholder="e.g. CodeWarriors Alpha"
                   value={teamName}
                   onChange={(e) => setTeamName(e.target.value)}
+                  className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-2.5 text-xs text-slate-900 dark:text-white outline-none focus:border-indigo-500"
                   required={isTeam}
-                  className="input-field"
                 />
               </div>
 
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <label className="text-xs font-bold text-slate-700 dark:text-slate-300">
-                    Teammate Email IDs
+              <div>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="text-xs font-bold text-slate-800 dark:text-slate-200">
+                    Team Members Roster
                   </label>
-                  {teamMembers.length < 4 && (
-                    <button
-                      type="button"
-                      onClick={handleAddTeammate}
-                      className="text-xs font-bold text-indigo-600 dark:text-indigo-400 hover:underline flex items-center gap-1"
-                    >
-                      <Plus size={12} /> Add Member
-                    </button>
-                  )}
+                  <button
+                    type="button"
+                    onClick={handleAddTeammate}
+                    className="text-xs font-bold text-indigo-600 dark:text-indigo-400 flex items-center gap-1 hover:underline"
+                  >
+                    <Plus size={13} />
+                    <span>Add Member</span>
+                  </button>
                 </div>
-                {teamMembers.map((member, idx) => (
-                  <div key={idx} className="flex items-center gap-2">
-                    <input
-                      type="email"
-                      placeholder={`Member #${idx + 2} Email address`}
-                      value={member}
-                      onChange={(e) => handleTeammateChange(idx, e.target.value)}
-                      className="input-field"
-                    />
-                    {teamMembers.length > 1 && (
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2 p-2 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-xs">
+                    <span className="font-bold text-indigo-600 dark:text-indigo-400 text-[11px] px-1.5 py-0.5 rounded bg-indigo-50 dark:bg-indigo-950">Lead</span>
+                    <span className="text-slate-900 dark:text-white font-medium truncate">{currentUser?.name || 'You (Leader)'}</span>
+                    <span className="ml-auto text-[11px] text-slate-400 truncate">{currentUser?.email}</span>
+                  </div>
+
+                  {teamMembers.map((member, idx) => (
+                    <div key={idx} className="flex items-center gap-2">
+                      <input
+                        type="text"
+                        placeholder={`Member #${idx + 2} Full Name or Email`}
+                        value={member}
+                        onChange={(e) => handleTeammateChange(idx, e.target.value)}
+                        className="flex-1 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-2 text-xs text-slate-900 dark:text-white outline-none"
+                      />
                       <button
                         type="button"
                         onClick={() => handleRemoveTeammate(idx)}
-                        className="p-2 text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-lg transition-colors"
+                        className="p-2 text-slate-400 hover:text-rose-600 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800"
                       >
                         <Trash2 size={14} />
                       </button>
-                    )}
-                  </div>
-                ))}
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
           )}
 
           {/* Contact Details */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div className="space-y-1">
-              <label className="text-xs font-bold text-slate-700 dark:text-slate-300">
-                Phone Number *
+            <div>
+              <label className="text-xs font-bold text-slate-700 dark:text-slate-300 mb-1 block">
+                Contact Phone / WhatsApp
               </label>
               <input
                 type="tel"
                 placeholder="+91 98765 43210"
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
-                required
-                className="input-field"
+                className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-2.5 text-xs text-slate-900 dark:text-white outline-none focus:border-indigo-500"
               />
             </div>
 
-            <div className="space-y-1">
-              <label className="text-xs font-bold text-slate-700 dark:text-slate-300">
-                {currentUser?.role === 'student' ? 'College / University *' : 'Company / Organization *'}
+            <div>
+              <label className="text-xs font-bold text-slate-700 dark:text-slate-300 mb-1 block">
+                Affiliation / Institution
               </label>
               <input
                 type="text"
-                placeholder={currentUser?.role === 'student' ? 'e.g. IIT Delhi' : 'e.g. Google'}
+                placeholder="e.g. IIT Delhi"
                 value={affiliation}
                 onChange={(e) => setAffiliation(e.target.value)}
-                required
-                className="input-field"
+                className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-2.5 text-xs text-slate-900 dark:text-white outline-none focus:border-indigo-500"
               />
             </div>
           </div>
 
-          {/* Custom Notes */}
-          <div className="space-y-1">
-            <label className="text-xs font-bold text-slate-700 dark:text-slate-300">
-              Special Requests or Accessibility Requirements (Optional)
-            </label>
-            <textarea
-              rows={2}
-              placeholder="Any dietary restrictions, special software tools, or accommodations..."
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              className="input-field"
-            />
-          </div>
-
           {/* Pricing Summary */}
-          <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800 space-y-2 text-xs">
-            <div className="flex items-center justify-between text-slate-600 dark:text-slate-400">
-              <span>Event Pass Price</span>
-              <strong className="text-slate-900 dark:text-white">
-                {event.isFree ? 'FREE' : `₹${event.price}`}
-              </strong>
+          <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-800 flex items-center justify-between">
+            <div>
+              <p className="text-xs font-bold text-slate-900 dark:text-white">Admission Tier</p>
+              <p className="text-[11px] text-slate-500">Includes verified badge + certificate</p>
             </div>
-            <div className="flex items-center justify-between text-slate-600 dark:text-slate-400">
-              <span>Processing Fee</span>
-              <strong className="text-emerald-500">₹0 (Waived)</strong>
-            </div>
-            <div className="border-t border-slate-200 dark:border-slate-700 pt-2 flex items-center justify-between text-sm font-bold text-slate-900 dark:text-white">
-              <span>Total Payable</span>
-              <span className="text-indigo-600 dark:text-indigo-400 font-black text-base">
-                {event.isFree ? '₹0 (FREE)' : `₹${event.price}`}
-              </span>
-            </div>
+            <span className="text-lg font-black text-indigo-600 dark:text-indigo-400">
+              {event.isFree ? 'FREE' : `₹${event.price}`}
+            </span>
           </div>
 
-          {/* Terms checkbox */}
-          <label className="flex items-start gap-2.5 cursor-pointer text-xs text-slate-600 dark:text-slate-400">
-            <input
-              type="checkbox"
-              checked={agreedTerms}
-              onChange={(e) => setAgreedTerms(e.target.checked)}
-              className="mt-0.5 rounded text-indigo-600 focus:ring-indigo-500"
-            />
-            <span>
-              I accept the EventHub code of conduct, host participation rules, and attendee policies.
-            </span>
-          </label>
-
-          {/* Submit Button */}
+          {/* Submit Action */}
           <button
             type="submit"
             disabled={isSubmitting}
-            className={`w-full py-3 px-4 rounded-xl text-sm font-bold flex items-center justify-center gap-2 shadow-md transition-all ${
+            className={`w-full py-3 px-4 rounded-xl text-xs font-bold text-white shadow-lg flex items-center justify-center gap-2 transition-all cursor-pointer ${
               isFull
-                ? 'bg-amber-500 hover:bg-amber-600 text-white shadow-amber-500/25'
-                : 'btn-primary'
+                ? 'bg-amber-600 hover:bg-amber-700 shadow-amber-600/25'
+                : 'bg-gradient-to-r from-indigo-600 to-violet-600 hover:opacity-95 shadow-indigo-600/25'
             }`}
           >
             {isSubmitting ? (
               <>
                 <Loader2 size={16} className="animate-spin" />
-                <span>Issuing Digital Pass...</span>
+                <span>Generating Digital Pass...</span>
               </>
             ) : isFull ? (
-              <span>Confirm & Join Waitlist #{ (event.waitlistCount || 0) + 1 }</span>
+              <span>Confirm & Join Waitlist Queue</span>
             ) : (
               <>
                 <Ticket size={16} />
@@ -374,4 +308,3 @@ export const RegistrationModal = ({ event, onClose }) => {
 };
 
 export default RegistrationModal;
-

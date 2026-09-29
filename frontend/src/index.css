@@ -1,5 +1,7 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 @layer base {
   :root {
     /* Brand Accent Colors */
@@ -25,15 +27,15 @@
     --bg-elevated: #FFFFFF;
     --bg-subtle: #F1F5F9;
     --bg-input: #FFFFFF;
-    --bg-glass: rgba(255, 255, 255, 0.88);
-    --border-glass: rgba(226, 232, 240, 0.85);
+    --bg-glass: rgba(255, 255, 255, 0.92);
+    --border-glass: rgba(226, 232, 240, 0.95);
 
     --border-subtle: #E2E8F0;
     --border-strong: #CBD5E1;
     
     --text-primary: #0F172A;
     --text-main: #0F172A;
-    --text-secondary: #475569;
+    --text-secondary: #334155;
     --text-muted: #64748B;
     --text-faint: #94A3B8;
     --text-inverse: #FFFFFF;

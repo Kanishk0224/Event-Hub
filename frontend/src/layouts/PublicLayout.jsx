@@ -6,10 +6,24 @@ import CommandPalette from '../components/ui/CommandPalette';
 import { useEventHub } from '../context/EventHubContext';
 import { motion, AnimatePresence } from 'framer-motion';
 import { CheckCircle, AlertCircle, Info, X } from 'lucide-react';
+import TicketPassModal from '../components/TicketPassModal';
+import RegistrationModal from '../components/RegistrationModal';
+import EventDetailModal from '../components/EventDetailModal';
 
 export const PublicLayout = () => {
   const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
-  const { toastMessage } = useEventHub();
+  const {
+    toastMessage,
+    ticketModalOpen,
+    setTicketModalOpen,
+    selectedTicket,
+    registerModalOpen,
+    setRegisterModalOpen,
+    selectedEventForModal,
+    setSelectedEventForModal,
+    eventDetailModalOpen,
+    setEventDetailModalOpen
+  } = useEventHub();
 
   return (
     <div className="min-h-screen flex flex-col bg-slate-50 dark:bg-[#080C14] text-slate-900 dark:text-slate-100 transition-colors duration-200">
@@ -24,6 +38,33 @@ export const PublicLayout = () => {
       <CommandPalette
         isOpen={commandPaletteOpen}
         onClose={() => setCommandPaletteOpen(false)}
+      />
+
+      {/* Global Live QR Admission Ticket Pass Modal */}
+      <TicketPassModal
+        registration={selectedTicket}
+        ticket={selectedTicket}
+        isOpen={ticketModalOpen}
+        onClose={() => setTicketModalOpen(false)}
+      />
+
+      {/* Global Event Registration Modal */}
+      <RegistrationModal
+        event={selectedEventForModal}
+        isOpen={registerModalOpen}
+        onClose={() => setRegisterModalOpen(false)}
+      />
+
+      {/* Global Quick Event Details Modal */}
+      <EventDetailModal
+        event={selectedEventForModal}
+        isOpen={eventDetailModalOpen}
+        onClose={() => setEventDetailModalOpen(false)}
+        onRegisterClick={(evt) => {
+          setEventDetailModalOpen(false);
+          setSelectedEventForModal(evt);
+          setRegisterModalOpen(true);
+        }}
       />
 
       {/* Global Animated Toast Notification Banner */}

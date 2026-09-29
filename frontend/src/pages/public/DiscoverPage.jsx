@@ -434,7 +434,7 @@ export const DiscoverPage = () => {
               <button
                 onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
                 disabled={currentPage === 1}
-                className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-3.5 py-2 text-xs font-semibold text-slate-700 dark:text-slate-300 disabled:opacity-40"
+                className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-3.5 py-2 text-xs font-semibold text-slate-700 dark:text-slate-300 disabled:opacity-40 cursor-pointer"
               >
                 Previous
               </button>
@@ -444,7 +444,7 @@ export const DiscoverPage = () => {
                   <button
                     key={pageNum}
                     onClick={() => setCurrentPage(pageNum)}
-                    className={`h-8 w-8 rounded-xl text-xs font-semibold transition-colors ${
+                    className={`h-8 w-8 rounded-xl text-xs font-semibold transition-colors cursor-pointer ${
                       currentPage === pageNum
                         ? 'bg-indigo-600 text-white shadow-md'
                         : 'border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300'
@@ -457,7 +457,7 @@ export const DiscoverPage = () => {
               <button
                 onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
                 disabled={currentPage === totalPages}
-                className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-3.5 py-2 text-xs font-semibold text-slate-700 dark:text-slate-300 disabled:opacity-40"
+                className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-3.5 py-2 text-xs font-semibold text-slate-700 dark:text-slate-300 disabled:opacity-40 cursor-pointer"
               >
                 Next
               </button>
@@ -465,6 +465,152 @@ export const DiscoverPage = () => {
           )}
         </div>
       </div>
+
+      {/* Mobile Filter Drawer */}
+      {mobileFilterOpen && (
+        <div className="fixed inset-0 z-50 flex lg:hidden">
+          <div
+            className="fixed inset-0 bg-slate-950/60 backdrop-blur-sm transition-opacity"
+            onClick={() => setMobileFilterOpen(false)}
+          />
+          <div className="relative w-80 max-w-[85vw] ml-auto flex-1 flex flex-col bg-white dark:bg-slate-900 p-6 shadow-2xl overflow-y-auto space-y-6">
+            <div className="flex items-center justify-between pb-4 border-b border-slate-200 dark:border-slate-800">
+              <div className="flex items-center gap-2 text-sm font-bold text-slate-900 dark:text-white">
+                <SlidersHorizontal className="h-4 w-4 text-indigo-500" />
+                <span>Filter Events</span>
+              </div>
+              <button
+                onClick={() => setMobileFilterOpen(false)}
+                className="p-1.5 rounded-lg text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            {/* Category Filter */}
+            <div>
+              <label className="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2 block">
+                Category
+              </label>
+              <div className="space-y-1">
+                <button
+                  onClick={() => updateParam('category', 'all')}
+                  className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-medium transition-colors ${
+                    categoryParam === 'all'
+                      ? 'bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 font-semibold'
+                      : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'
+                  }`}
+                >
+                  <span>All Categories</span>
+                  {categoryParam === 'all' && <Check className="h-3.5 w-3.5" />}
+                </button>
+                {categories.map((cat) => (
+                  <button
+                    key={cat.id}
+                    onClick={() => updateParam('category', cat.id)}
+                    className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-medium transition-colors ${
+                      categoryParam === cat.id
+                        ? 'bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 font-semibold'
+                        : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'
+                    }`}
+                  >
+                    <span>{cat.name}</span>
+                    {categoryParam === cat.id && <Check className="h-3.5 w-3.5" />}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Format Filter */}
+            <div>
+              <label className="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2 block">
+                Format
+              </label>
+              <div className="grid grid-cols-2 gap-1 rounded-xl bg-slate-100 dark:bg-slate-800 p-1">
+                {[
+                  { id: 'all', label: 'All' },
+                  { id: 'Online', label: 'Online' },
+                  { id: 'In-Person', label: 'In-Person' },
+                  { id: 'Hybrid', label: 'Hybrid' }
+                ].map((m) => (
+                  <button
+                    key={m.id}
+                    onClick={() => updateParam('mode', m.id)}
+                    className={`py-1.5 text-xs font-medium rounded-lg transition-colors ${
+                      modeParam === m.id
+                        ? 'bg-white dark:bg-slate-700 text-indigo-600 dark:text-indigo-400 shadow-sm font-semibold'
+                        : 'text-slate-600 dark:text-slate-400'
+                    }`}
+                  >
+                    {m.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Pricing Filter */}
+            <div>
+              <label className="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2 block">
+                Pricing
+              </label>
+              <div className="grid grid-cols-3 gap-1 rounded-xl bg-slate-100 dark:bg-slate-800 p-1">
+                {[
+                  { id: 'all', label: 'All' },
+                  { id: 'free', label: 'Free' },
+                  { id: 'paid', label: 'Paid' }
+                ].map((p) => (
+                  <button
+                    key={p.id}
+                    onClick={() => updateParam('price', p.id)}
+                    className={`py-1.5 text-xs font-medium rounded-lg transition-colors ${
+                      priceParam === p.id
+                        ? 'bg-white dark:bg-slate-700 text-indigo-600 dark:text-indigo-400 shadow-sm font-semibold'
+                        : 'text-slate-600 dark:text-slate-400'
+                    }`}
+                  >
+                    {p.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Featured Only */}
+            <div className="pt-2 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
+              <span className="text-xs font-medium text-slate-700 dark:text-slate-300">
+                Featured Spotlights
+              </span>
+              <input
+                type="checkbox"
+                checked={featuredParam}
+                onChange={(e) => updateParam('featured', e.target.checked)}
+                className="h-4 w-4 rounded text-indigo-600 focus:ring-indigo-500 cursor-pointer"
+              >
+              </input>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="pt-4 border-t border-slate-100 dark:border-slate-800 space-y-2">
+              <button
+                onClick={() => setMobileFilterOpen(false)}
+                className="btn-primary w-full !py-2.5 !text-xs font-bold"
+              >
+                Apply Filters ({filteredEvents.length} results)
+              </button>
+              {activeFiltersCount > 0 && (
+                <button
+                  onClick={() => {
+                    clearAllFilters();
+                    setMobileFilterOpen(false);
+                  }}
+                  className="w-full py-2 text-xs font-medium text-slate-500 hover:text-slate-900 dark:hover:text-white"
+                >
+                  Clear All Filters
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

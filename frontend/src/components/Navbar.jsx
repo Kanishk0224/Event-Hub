@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Link, NavLink, useNavigate } from 'react-router-dom';
 import { useEventHub } from '../context/EventHubContext';
 import ThemeToggle from './ui/ThemeToggle';
+import BackendStatusIndicator from './ui/BackendStatusIndicator';
 import {
   Sparkles,
   Search,
@@ -144,15 +145,18 @@ export const Navbar = ({ onOpenCommandPalette }) => {
           </button>
         </div>
 
-        {/* Right: Actions, Theme, Notifications & User */}
-        <div className="flex items-center gap-2.5">
+        {/* Right: Actions, Backend Status, Theme, Notifications & User */}
+        <div className="flex items-center gap-2 sm:gap-2.5">
+          {/* Backend Status Live Health Indicator */}
+          <BackendStatusIndicator />
+
           {/* Host an Event CTA */}
           <Link
             to={currentUser?.role === 'host' ? '/app/organizer/create-event' : '/login?mode=register'}
-            className="hidden sm:inline-flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 px-4 py-2 text-xs font-bold text-white shadow-md shadow-indigo-500/25 hover:opacity-95 transition-all"
+            className="hidden sm:inline-flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 px-3.5 py-2 text-xs font-bold text-white shadow-md shadow-indigo-500/25 hover:opacity-95 transition-all"
           >
             <PlusCircle className="h-4 w-4" />
-            <span>Host an Event</span>
+            <span>Host Event</span>
           </Link>
 
           {/* Theme Switcher Toggle */}
@@ -162,7 +166,7 @@ export const Navbar = ({ onOpenCommandPalette }) => {
           <div className="relative" ref={notifRef}>
             <button
               onClick={() => setNotifDropdownOpen(!notifDropdownOpen)}
-              className="relative flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 hover:border-indigo-500 hover:text-indigo-600 transition-all shadow-sm"
+              className="relative flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 hover:border-indigo-500 hover:text-indigo-600 transition-all shadow-sm cursor-pointer"
               aria-label="Notifications"
             >
               <Bell className="h-4 w-4" />
@@ -182,7 +186,7 @@ export const Navbar = ({ onOpenCommandPalette }) => {
                   {userNotifications.length > 0 && (
                     <button
                       onClick={clearAllNotifications}
-                      className="text-[11px] font-semibold text-indigo-600 dark:text-indigo-400 hover:underline"
+                      className="text-[11px] font-semibold text-indigo-600 dark:text-indigo-400 hover:underline cursor-pointer"
                     >
                       Clear all
                     </button>
@@ -228,7 +232,7 @@ export const Navbar = ({ onOpenCommandPalette }) => {
             <div className="relative" ref={profileRef}>
               <button
                 onClick={() => setProfileDropdownOpen(!profileDropdownOpen)}
-                className="flex items-center gap-2 rounded-xl p-1 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                className="flex items-center gap-2 rounded-xl p-1 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
               >
                 <img
                   src={currentUser.avatar}
@@ -299,7 +303,7 @@ export const Navbar = ({ onOpenCommandPalette }) => {
           ) : (
             <Link
               to="/login"
-              className="rounded-xl bg-slate-900 dark:bg-white text-white dark:text-slate-900 px-4 py-2 text-xs font-bold shadow hover:opacity-90 transition-opacity"
+              className="rounded-xl bg-slate-900 dark:bg-white text-white dark:text-slate-900 px-3.5 py-2 text-xs font-bold shadow hover:opacity-90 transition-opacity"
             >
               Sign In
             </Link>
@@ -308,7 +312,8 @@ export const Navbar = ({ onOpenCommandPalette }) => {
           {/* Mobile menu trigger */}
           <button
             onClick={() => setMobileMenuOpen(true)}
-            className="md:hidden flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300"
+            className="md:hidden flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 cursor-pointer"
+            aria-label="Open Navigation Menu"
           >
             <Menu className="h-5 w-5" />
           </button>
@@ -318,31 +323,131 @@ export const Navbar = ({ onOpenCommandPalette }) => {
       {/* Mobile Menu Drawer */}
       {mobileMenuOpen && (
         <div className="fixed inset-0 z-50 flex md:hidden">
-          <div className="fixed inset-0 bg-slate-950/60 backdrop-blur-sm" onClick={() => setMobileMenuOpen(false)} />
-          <div className="relative w-72 max-w-full flex-1 flex flex-col bg-white dark:bg-slate-900 p-6 shadow-2xl">
+          <div
+            className="fixed inset-0 bg-slate-950/60 backdrop-blur-sm transition-opacity"
+            onClick={() => setMobileMenuOpen(false)}
+          />
+          <div className="relative w-80 max-w-[85vw] flex-1 flex flex-col bg-white dark:bg-slate-900 p-5 shadow-2xl overflow-y-auto">
             <div className="flex items-center justify-between pb-4 border-b border-slate-200 dark:border-slate-800">
-              <span className="font-bold text-slate-900 dark:text-white">Menu</span>
-              <button onClick={() => setMobileMenuOpen(false)} className="text-slate-400">
+              <div className="flex items-center gap-2.5">
+                <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-indigo-600 text-white">
+                  <Sparkles className="h-4 w-4" />
+                </div>
+                <span className="font-bold text-slate-900 dark:text-white">EventHub</span>
+              </div>
+              <button
+                onClick={() => setMobileMenuOpen(false)}
+                className="p-1.5 rounded-lg text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"
+                aria-label="Close menu"
+              >
                 <X className="h-5 w-5" />
               </button>
             </div>
-            <div className="py-4 space-y-2">
-              <Link to="/" onClick={() => setMobileMenuOpen(false)} className="block py-2 text-sm font-semibold">Home</Link>
-              <Link to="/events" onClick={() => setMobileMenuOpen(false)} className="block py-2 text-sm font-semibold">Discover Events</Link>
+
+            {/* Mobile Search Button */}
+            <div className="pt-4">
+              <button
+                onClick={() => {
+                  setMobileMenuOpen(false);
+                  if (onOpenCommandPalette) onOpenCommandPalette();
+                }}
+                className="w-full flex items-center justify-between rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 px-3.5 py-2.5 text-xs text-slate-400"
+              >
+                <div className="flex items-center gap-2">
+                  <Search className="h-4 w-4" />
+                  <span>Search events, topics...</span>
+                </div>
+                <kbd className="rounded bg-slate-200 dark:bg-slate-700 px-1.5 py-0.5 text-[10px]">Ctrl+K</kbd>
+              </button>
+            </div>
+
+            {/* Navigation Links */}
+            <div className="py-4 space-y-1.5 flex-1">
+              <Link
+                to="/"
+                onClick={() => setMobileMenuOpen(false)}
+                className="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-semibold text-slate-700 dark:text-slate-200 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 hover:text-indigo-600"
+              >
+                <Sparkles className="h-4 w-4 text-indigo-500" />
+                <span>Home</span>
+              </Link>
+              <Link
+                to="/events"
+                onClick={() => setMobileMenuOpen(false)}
+                className="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-semibold text-slate-700 dark:text-slate-200 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 hover:text-indigo-600"
+              >
+                <Compass className="h-4 w-4 text-indigo-500" />
+                <span>Discover Events</span>
+              </Link>
+
+              {currentUser && (
+                <>
+                  <button
+                    onClick={() => {
+                      handleDashboardRoute();
+                      setMobileMenuOpen(false);
+                    }}
+                    className="flex w-full items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-semibold text-slate-700 dark:text-slate-200 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 hover:text-indigo-600 cursor-pointer text-left"
+                  >
+                    <LayoutDashboard className="h-4 w-4 text-indigo-500" />
+                    <span>Dashboard ({currentUser.role})</span>
+                  </button>
+                  <Link
+                    to="/app/attendee/tickets"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-semibold text-slate-700 dark:text-slate-200 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 hover:text-indigo-600"
+                  >
+                    <Ticket className="h-4 w-4 text-indigo-500" />
+                    <span>My Tickets</span>
+                  </Link>
+                </>
+              )}
+
+              <Link
+                to={currentUser?.role === 'host' ? '/app/organizer/create-event' : '/login?mode=register'}
+                onClick={() => setMobileMenuOpen(false)}
+                className="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-semibold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/30"
+              >
+                <PlusCircle className="h-4 w-4" />
+                <span>Host an Event</span>
+              </Link>
+            </div>
+
+            {/* Mobile Footer & Auth */}
+            <div className="pt-4 border-t border-slate-200 dark:border-slate-800 space-y-3">
+              <div className="flex items-center justify-between px-1">
+                <span className="text-xs text-slate-500">API Status:</span>
+                <BackendStatusIndicator />
+              </div>
+
               {currentUser ? (
                 <button
                   onClick={() => {
-                    handleDashboardRoute();
+                    logout();
                     setMobileMenuOpen(false);
                   }}
-                  className="block w-full text-left py-2 text-sm font-semibold"
+                  className="flex w-full items-center justify-center gap-2 rounded-xl py-2.5 text-xs font-bold text-rose-600 bg-rose-50 dark:bg-rose-950/40 cursor-pointer"
                 >
-                  Dashboard
+                  <LogOut className="h-4 w-4" />
+                  <span>Log Out ({currentUser.name})</span>
                 </button>
               ) : (
-                <Link to="/login" onClick={() => setMobileMenuOpen(false)} className="block py-2 text-sm font-semibold text-indigo-600">
-                  Sign In
-                </Link>
+                <div className="grid grid-cols-2 gap-2">
+                  <Link
+                    to="/login"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="flex items-center justify-center py-2.5 text-xs font-bold rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white"
+                  >
+                    Sign In
+                  </Link>
+                  <Link
+                    to="/login?mode=register"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="btn-primary !py-2.5 !text-xs text-center"
+                  >
+                    Register
+                  </Link>
+                </div>
               )}
             </div>
           </div>
@@ -353,3 +458,4 @@ export const Navbar = ({ onOpenCommandPalette }) => {
 };
 
 export default Navbar;
+

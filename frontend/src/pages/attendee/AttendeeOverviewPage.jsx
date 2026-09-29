@@ -16,7 +16,6 @@ import StatCard from '../../components/ui/StatCard';
 import PageHeader from '../../components/ui/PageHeader';
 import EventCard from '../../components/EventCard';
 import EmptyState from '../../components/ui/EmptyState';
-import TicketPassModal from '../../components/TicketPassModal';
 
 export const AttendeeOverviewPage = () => {
   const {
@@ -200,12 +199,6 @@ export const AttendeeOverviewPage = () => {
           ))}
         </div>
       </div>
-
-      <TicketPassModal
-        registration={selectedTicket}
-        isOpen={ticketModalOpen}
-        onClose={() => setTicketModalOpen(false)}
-      />
     </div>
   );
 };
